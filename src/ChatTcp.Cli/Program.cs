@@ -10,7 +10,10 @@ internal class Program
     private static void Main(string[] args)
     {
         var consoleUi = new ConsoleUi();
-        Dashboard.AddDashboardElements(consoleUi.AddCharElement, height: consoleUi.Height, width: consoleUi.Width);
+        var width = Console.WindowWidth;
+        var height = Console.WindowHeight;
+        var dashboard = new Dashboard(consoleUi.AddCharElement, height: height, width: width);
+        Console.SetCursorPosition(dashboard.curserInput.X, dashboard.curserInput.Y);
         consoleUi.RenderScreen();
         Console.Read();
         //Console.WriteLine("Server (Y/n)");

@@ -2,71 +2,48 @@
 
 internal class ConsoleUi
 {
-    private List<List<char>> _renderedScreen = new();
-    private List<List<char>> _nextScreen = new();
-    public int Width { get; private set; } = 0;
-    public int Height { get; private set; } = 0;
-
-    public ConsoleUi()
-    {
-        SetScreenSize(25, 100);
-    }
+    private const int bufferX = 500;
+    private const int bufferY = 200;
+    private char[,] _renderedScreen = new char[bufferX, bufferY];
+    private char[,] _nextScreen = new char[bufferX, bufferY];
 
     internal void AddCharElement(CharElement charElement)
     {
-        if(charElement.X > Width || charElement.Y > Height)
-        {
-            throw new ArgumentException($"{nameof(CharElement)} out of range, y = {charElement.X}, x = {charElement.Y}");
-        }
-
-        _nextScreen[charElement.X][charElement.Y] = charElement.Char;
-    }
-
-    internal void SetScreenSize(int newHeight, int newWidth)
-    {
-        for (int x = Width; x < newWidth; x++)
-        {
-            var renderedColumn = new List<char>();
-            var newColumn = new List<char>();
-
-            for (int y = Height; y < newHeight; y++)
-            {
-                renderedColumn.Add('\0');
-                newColumn.Add('\0');
-            }
-
-            _renderedScreen.Add(renderedColumn);
-            _nextScreen.Add(newColumn);
-        }
-
-        Height = newHeight;
-        Width = newWidth;
-
-        if(_renderedScreen.Count != Width)
-        {
-            throw new ArgumentException($"columns: {_renderedScreen.Count} does not match length: {Width}");
-        }
-
-        if(_renderedScreen[0].Count != Height)
-        {
-            throw new ArgumentException($"rows: {_renderedScreen[0].Count} does not match length: {Height}");
-        }
+        _nextScreen[charElement.X, charElement.Y] = charElement.Char;
     }
 
     internal void RenderScreen()
     {
-        for (int x = 0; x < _nextScreen.Count; x++)
+        var curser = ConsoleHelper.GetCurserPosition();
+
+        for (int x = 0; x < bufferX; x++)
         {
-            for (int y = 0; y < _nextScreen[x].Count; y++)
+            for (int y = 0; y < bufferY; y++)
             {
-                if(_nextScreen[x][y] != _renderedScreen[x][y])
+                if(_nextScreen[x, y] != _renderedScreen[x, y])
                 {
                     Console.SetCursorPosition(x, y);
-                    Console.Write(_nextScreen[x][y]);
-                    _renderedScreen[x][y] = _nextScreen[x][y];
+                    Console.Write(_nextScreen[x, y]);
+                    _renderedScreen[x, y] = _nextScreen[x, y];
                 }
             }
         }
+
+        ConsoleHelper.SetCurserPosition(curser);
+    }
+}
+
+internal static class ConsoleHelper
+{
+    public static Point GetCurserPosition()
+    {
+        var curserPosition = Console.GetCursorPosition();
+        return new Point(curserPosition.Left, curserPosition.Top);
+    }
+
+    public static void SetCurserPosition(Point point)
+    {
+        Console.SetCursorPosition(point.X, point.Y);
     }
 }
 

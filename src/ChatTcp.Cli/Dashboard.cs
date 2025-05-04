@@ -1,8 +1,30 @@
 ﻿namespace CliChat.Cli;
 
+internal struct Point
+{
+    public Point(int x, int y)
+    {
+        X = x;
+        Y = y;
+    }
+
+    public int X { get; set; }
+    public int Y { get; set; }
+}
+
 internal class Dashboard
 {
-    public static void AddDashboardElements(Action<CharElement> addCharElement, int height, int width, int xStart = 0, int yStart = 0)
+    private const int menuWidth = 25;
+    private const int inputBoxHeight = 3;
+    public Point curserInput {  get; private set; }
+
+    public Dashboard(Action<CharElement> addCharElement, int height, int width)
+    {
+        AddDashboardElements(addCharElement, height, width);
+        curserInput = new Point(1, height - inputBoxHeight + 1);
+    }
+
+    private static void AddDashboardElements(Action<CharElement> addCharElement, int height, int width)
     {
         /*
          *|<-             width                ->|
@@ -18,14 +40,12 @@ internal class Dashboard
          *                              │
          */
 
-        const int menuWidth = 25;
-        const int inputBoxHeight = 3;
 
         int verticalSplitX = width - menuWidth;
-        AddVerticalLine(addCharElement, height - 1, verticalSplitX, yStart + 1, '│');
+        AddVerticalLine(addCharElement, height - 1, verticalSplitX, 1, '│');
 
         int horizontalSplitY = height - inputBoxHeight;
-        AddHorisontalLine(addCharElement, width - 1, xStart + 1, horizontalSplitY, '─');
+        AddHorisontalLine(addCharElement, width - 1, 1, horizontalSplitY, '─');
 
         AddChar(addCharElement, verticalSplitX, horizontalSplitY, '┼');
     }
