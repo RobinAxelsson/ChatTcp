@@ -5,57 +5,29 @@ internal class Dashboard
     public static void AddDashboardElements(Action<CharElement> addCharElement, int height, int width, int xStart = 0, int yStart = 0)
     {
         /*
-         * ┌──────────────1──────────────┬────────┐
-         * │Hello!                       │  menu  │
-         * │                      Hi man!│        │
-         * │                             │        │
-         * 2                             3        4
-         * │                             │        │
-         * │                             │        │
-         * │                             │        │
-         * ├──────────────5──────────────┤        │
-         * │        1 row input          │        │
-         * └──────────────6──────────────┴────────┘
+         *|<-             width                ->|
+         * Bob: Hello!                  │  menu
+         *                       Hi man!│<-    ->|   
+         *                              │      
+         *                              │      
+         *                              │      
+         *                              │      
+         *                              │      
+         * ─────────────────────────────┼────────     
+         *         input box            │      
+         *                              │
          */
 
-        int xEnd = xStart + width - 1;
-        int yEnd = yStart + height - 1;
         const int menuWidth = 25;
-        const int inputHeight = 3;
+        const int inputBoxHeight = 3;
 
-        int verticalSplitX = xEnd - menuWidth;
-        int horizontalSplitY = yEnd - inputHeight;
+        int verticalSplitX = width - menuWidth;
+        AddVerticalLine(addCharElement, height - 1, verticalSplitX, yStart + 1, '│');
 
-        int line1Length = width - 1;
-        int line1xStart = xStart + 1;
-        AddHorisontalLine(addCharElement, line1Length, line1xStart, 0, '─');
+        int horizontalSplitY = height - inputBoxHeight;
+        AddHorisontalLine(addCharElement, width - 1, xStart + 1, horizontalSplitY, '─');
 
-        int line2Length = height - 1;
-        AddVerticalLine(addCharElement, line2Length, xStart, yStart + 1, '│');
-
-        int line3Length = line2Length;
-        AddVerticalLine(addCharElement, line3Length, verticalSplitX, yStart + 1, '│');
-
-        int line4length = line2Length;
-        AddVerticalLine(addCharElement, line4length, xEnd, yStart + 1, '│');
-
-        int line5Length = width - menuWidth - 1;
-        AddHorisontalLine(addCharElement, line5Length, xStart + 1, horizontalSplitY, '─');
-
-        int line6Length = line1Length;
-        int line6xStart = line1xStart;
-        AddHorisontalLine(addCharElement, line6Length, line6xStart, yEnd, '─');
-
-        AddChar(addCharElement, xStart, yStart, '┌');
-        AddChar(addCharElement, verticalSplitX, yStart, '┬');
-        AddChar(addCharElement, xEnd, yStart, '┐');
-        AddChar(addCharElement, xStart, horizontalSplitY, '├');
-        AddChar(addCharElement, verticalSplitX, horizontalSplitY, '┤');
-        AddChar(addCharElement, xStart, yEnd, '└');
-        AddChar(addCharElement, verticalSplitX, yEnd, '┴');
-        AddChar(addCharElement, xEnd, yEnd, '┘');
-
-
+        AddChar(addCharElement, verticalSplitX, horizontalSplitY, '┼');
     }
 
     private static void AddChar(Action<CharElement> addCharElement, int x, int y, char c)
