@@ -1,7 +1,7 @@
 ﻿
 using System.Net;
 using System.Net.Sockets;
-using System.Text;
+using System.Threading.Channels;
 
 namespace CliChat.Cli;
 
@@ -12,17 +12,19 @@ internal class MessageServer : IDisposable
     private TcpListener _tcpServer;
     private List<RemoteClient> _connectedClients = new List<RemoteClient>();
     private bool isStarted = false;
+    private Channel<string> _messageChannel;
 
     public MessageServer()
     {
         _tcpServer = new TcpListener(_ipAddress, port);
+        _messageChannel = Channel.CreateUnbounded<string>();
     }
 
     public void Start()
     {
         if (isStarted)
         {
-            throw new ArgumentException("You started the messagServer twice");
+            throw new ArgumentException("Server is already running");
         }
 
         _tcpServer.Start();
@@ -30,8 +32,7 @@ internal class MessageServer : IDisposable
 
         while (true)
         {
-            using var tcpClient = _tcpServer.AcceptTcpClient();
-            var connectedClient = new RemoteClient(tcpClient);
+            var connectedClient = new RemoteClient(_tcpServer.AcceptTcpClient(), _messageChannel);
             connectedClient.AddToConsoleChat();
             _connectedClients.Add(connectedClient);
         }
@@ -46,69 +47,5 @@ internal class MessageServer : IDisposable
         _connectedClients.ForEach(x => x.Dispose());
         _connectedClients.Clear();
         _tcpServer?.Dispose();
-    }
-
-    private class RemoteClient : IDisposable
-    {
-        private readonly TcpClient _tcpClient;
-
-
-        public RemoteClient(TcpClient tcpClient)
-        {
-            _tcpClient = tcpClient;
-        }
-
-        public void AddToConsoleChat()
-        {
-            var remoteEndpoint = _tcpClient.Client.RemoteEndPoint;
-            if (remoteEndpoint == null)
-            {
-                throw new ArgumentNullException(nameof(remoteEndpoint));
-            }
-
-            Console.WriteLine("Client connected: " + remoteEndpoint);
-
-            using var networkStream = _tcpClient.GetStream();
-            using var streamWriter = new StreamWriter(networkStream, Encoding.UTF8) { AutoFlush = true };
-            using var streamReader = new StreamReader(networkStream, Encoding.UTF8);
-
-
-
-            var readTask = ReadLoop(streamReader, remoteEndpoint);
-            var writeTask = WriteLoop(streamWriter);
-
-            Task.WaitAll(readTask, writeTask);
-        }
-
-        private static async Task WriteLoop(StreamWriter streamWriter)
-        {
-            while (true)
-            {
-                var message = Console.ReadLine();
-                await streamWriter.WriteLineAsync(message);
-                Thread.Sleep(1000);
-            }
-        }
-
-        private static async Task ReadLoop(StreamReader streamReader, EndPoint remoteEndpoint)
-        {
-            string? message;
-
-            while (true)
-            {
-                Thread.Sleep(1000);
-
-                message = await streamReader.ReadLineAsync();
-
-                if (message == null) continue;
-
-                Console.WriteLine($"{remoteEndpoint}:{message}");
-            }
-        }
-
-        public void Dispose()
-        {
-            _tcpClient.Dispose();
-        }
     }
 }
