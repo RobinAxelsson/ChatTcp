@@ -1,6 +1,6 @@
-﻿namespace CliChat.Cli;
+﻿namespace ChatTcp.Cli.ConsoleUi;
 
-internal class ConsoleUi
+internal class Renderer
 {
     private const int bufferX = 500;
     private const int bufferY = 200;
@@ -14,13 +14,13 @@ internal class ConsoleUi
 
     internal void RenderScreen()
     {
-        var curser = ConsoleHelper.GetCurserPosition();
+        var curser = GetCursorPosition();
 
         for (int x = 0; x < bufferX; x++)
         {
             for (int y = 0; y < bufferY; y++)
             {
-                if(_nextScreen[x, y] != _renderedScreen[x, y])
+                if (_nextScreen[x, y] != _renderedScreen[x, y])
                 {
                     Console.SetCursorPosition(x, y);
                     Console.Write(_nextScreen[x, y]);
@@ -29,19 +29,16 @@ internal class ConsoleUi
             }
         }
 
-        ConsoleHelper.SetCurserPosition(curser);
+        SetCursorPosition(curser);
     }
-}
 
-internal static class ConsoleHelper
-{
-    public static Point GetCurserPosition()
+    private static Point GetCursorPosition()
     {
         var curserPosition = Console.GetCursorPosition();
         return new Point(curserPosition.Left, curserPosition.Top);
     }
 
-    public static void SetCurserPosition(Point point)
+    private static void SetCursorPosition(Point point)
     {
         Console.SetCursorPosition(point.X, point.Y);
     }
@@ -49,7 +46,7 @@ internal static class ConsoleHelper
 
 internal struct CharElement
 {
-    public char Char { get; init; }
-    public int X { get; init; }
-    public int Y { get; init; }
+    public required char Char { get; init; }
+    public required int X { get; init; }
+    public required int Y { get; init; }
 }

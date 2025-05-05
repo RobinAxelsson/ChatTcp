@@ -1,33 +1,20 @@
-﻿namespace CliChat.Cli;
+﻿namespace ChatTcp.Cli.ConsoleUi;
 
-internal struct Point
+internal class Frame
 {
-    public Point(int x, int y)
+    //private Action<CharElement> _addCharElement;
+    //private AppWindow _appWindow;
+    public Frame(Action<CharElement> addCharElement, AppWindow appWindow)
     {
-        X = x;
-        Y = y;
+        //_addCharElement = addCharElement;
+        //_appWindow = appWindow;
+        AddElements(addCharElement, appWindow.Height, appWindow.Width);
     }
 
-    public int X { get; set; }
-    public int Y { get; set; }
-}
-
-internal class Dashboard
-{
-    private const int menuWidth = 25;
-    private const int inputBoxHeight = 3;
-    public Point curserInput {  get; private set; }
-
-    public Dashboard(Action<CharElement> addCharElement, int height, int width)
-    {
-        AddDashboardElements(addCharElement, height, width);
-        curserInput = new Point(1, height - inputBoxHeight + 1);
-    }
-
-    private static void AddDashboardElements(Action<CharElement> addCharElement, int height, int width)
+    private static void AddElements(Action<CharElement> addCharElement, int height, int width)
     {
         /*
-         *|<-             width                ->|
+         *|<-             Width                ->|
          * Bob: Hello!                  │  menu
          *                       Hi man!│<-    ->|   
          *                              │      
@@ -41,10 +28,10 @@ internal class Dashboard
          */
 
 
-        int verticalSplitX = width - menuWidth;
+        int verticalSplitX = width - AppWindow.MENU_WIDTH;
         AddVerticalLine(addCharElement, height - 1, verticalSplitX, 1, '│');
 
-        int horizontalSplitY = height - inputBoxHeight;
+        int horizontalSplitY = height - AppWindow.INPUT_HEIGHT;
         AddHorisontalLine(addCharElement, width - 1, 1, horizontalSplitY, '─');
 
         AddChar(addCharElement, verticalSplitX, horizontalSplitY, '┼');

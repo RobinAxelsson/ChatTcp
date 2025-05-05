@@ -2,14 +2,14 @@
 using System.Text;
 using System.Threading.Channels;
 
-namespace CliChat.Cli;
+namespace ChatTcp.Cli.Networking;
 
 internal class RemoteClient : IDisposable
 {
     private readonly TcpClient _tcpClient;
     private readonly Channel<string> _messageChannel;
 
-    public RemoteClient(TcpClient tcpClient, System.Threading.Channels.Channel<string> messageChannel)
+    public RemoteClient(TcpClient tcpClient, Channel<string> messageChannel)
     {
         _tcpClient = tcpClient;
         _messageChannel = messageChannel;

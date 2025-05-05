@@ -1,21 +1,23 @@
-﻿
+﻿using ChatTcp.Cli.ConsoleUi;
 
-using System.Linq.Expressions;
-
-namespace CliChat.Cli;
+namespace ChatTcp.Cli;
 
 internal class Program
 {
 
     private static void Main(string[] args)
     {
-        var consoleUi = new ConsoleUi();
-        var width = Console.WindowWidth;
-        var height = Console.WindowHeight;
-        var dashboard = new Dashboard(consoleUi.AddCharElement, height: height, width: width);
-        Console.SetCursorPosition(dashboard.curserInput.X, dashboard.curserInput.Y);
+        var consoleUi = new Renderer();
+        var appWindow = new AppWindow();
+        var dashboard = new Frame(consoleUi.AddCharElement, appWindow);
+        var chat = new Chat(consoleUi.AddCharElement, appWindow);
         consoleUi.RenderScreen();
-        Console.Read();
+
+        while (true)
+        {
+            InputBox.Activate(appWindow.GetInputArea(), chat.SubmitHostMessage);
+            consoleUi.RenderScreen();
+        }
         //Console.WriteLine("Server (Y/n)");
         //var serverQ = Console.ReadLine()?.ToLower();
         //bool server = serverQ == "Y";
@@ -32,3 +34,4 @@ internal class Program
         //}
     }
 }
+

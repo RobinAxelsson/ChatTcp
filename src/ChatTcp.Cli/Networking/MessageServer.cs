@@ -3,7 +3,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Threading.Channels;
 
-namespace CliChat.Cli;
+namespace ChatTcp.Cli.Networking;
 
 internal class MessageServer : IDisposable
 {
