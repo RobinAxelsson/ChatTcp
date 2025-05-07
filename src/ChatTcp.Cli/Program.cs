@@ -9,6 +9,7 @@ internal class Program
     {
         var renderer = new Renderer();
         var appState = new AppState();
+
         appState.WindowWidth = Console.WindowWidth;
         appState.WindowHeight = Console.WindowHeight;
         appState.Messages.Add(new Message("Bob", "Morning man!"));
