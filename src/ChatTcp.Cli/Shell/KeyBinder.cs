@@ -18,9 +18,17 @@ internal class KeyBinder
                 return new QuitEvent();
             }
 
-            char c = key.KeyChar;
-            if (char.IsLetterOrDigit(c) || char.IsPunctuation(c) || char.IsSymbol(c) || c == ' ')
+            if ((key.Modifiers & (ConsoleModifiers.Control | ConsoleModifiers.Alt)) == (ConsoleModifiers.Control | ConsoleModifiers.Alt))
             {
+                if (char.IsLetterOrDigit(key.KeyChar) || char.IsPunctuation(key.KeyChar) || char.IsSymbol(key.KeyChar))
+                {
+                    return new TextInputEvent(key.KeyChar);
+                }
+            }
+
+            if (char.IsLetterOrDigit(key.KeyChar) || char.IsPunctuation(key.KeyChar) || char.IsSymbol(key.KeyChar) || key.KeyChar == ' ')
+            {
+                char c = key.KeyChar;
                 if (key.Modifiers == ConsoleModifiers.Shift && char.IsLower(c))
                 {
                     c = char.ToUpper(c);
