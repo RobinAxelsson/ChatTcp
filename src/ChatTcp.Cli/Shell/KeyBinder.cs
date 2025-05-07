@@ -13,6 +13,11 @@ internal class KeyBinder
                 return (AppEvent) new BackspaceEvent();
             }
 
+            if (key.Key == ConsoleKey.Enter)
+            {
+                return new SendMessageEvent();
+            }
+
             if (key.Key == ConsoleKey.Escape)
             {
                 return new QuitEvent();

@@ -14,14 +14,6 @@ internal class TextInputEvent : AppEvent
 
 internal class BackspaceEvent : AppEvent { }
 
-internal class CommandEvent : AppEvent
-{
-    public string Command { get; }
-
-    public CommandEvent(string command)
-    {
-        Command = command;
-    }
-}
+internal class SendMessageEvent : AppEvent { }
 
 internal class QuitEvent : AppEvent { }

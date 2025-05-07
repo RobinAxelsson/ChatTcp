@@ -48,7 +48,8 @@ internal class Renderer
 
     private void AddChatMessagesToFrameBuffer(List<Message> messages)
     {
-        var chatMessages =  messages.Select(x => $"{x.Sender}: {x.Content}").ToArray();
+
+        var chatMessages =  messages.Select(x => x.Sender != "" ? $"{x.Sender}: {x.Content}" : x.Content).ToArray();
 
         for (int y = 0; y < chatMessages.Count(); y++)
         {

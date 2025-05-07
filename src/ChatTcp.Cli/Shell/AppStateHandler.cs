@@ -24,6 +24,11 @@ internal class AppStateHandler
                 _appState.InputBuffer += textEvent.Character;
                 break;
 
+            case SendMessageEvent:
+                _appState.Messages.Add(new Message("", _appState.InputBuffer));
+                _appState.InputBuffer = "";
+                break;
+
             case BackspaceEvent:
                 if (_appState.InputBuffer.Length > 0)
                     _appState.InputBuffer = _appState.InputBuffer[..^1];
