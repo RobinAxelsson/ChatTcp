@@ -12,13 +12,21 @@ internal class KeyBinder
             {
                 return (AppEvent) new BackspaceEvent();
             }
+
             if (key.Key == ConsoleKey.Escape)
             {
                 return new QuitEvent();
             }
-            if (key.Modifiers == ConsoleModifiers.None)
+
+            char c = key.KeyChar;
+            if (char.IsLetterOrDigit(c) || char.IsPunctuation(c) || char.IsSymbol(c) || c == ' ')
             {
-                return new TextInputEvent(key.KeyChar);
+                if (key.Modifiers == ConsoleModifiers.Shift && char.IsLower(c))
+                {
+                    c = char.ToUpper(c);
+                }
+
+                return new TextInputEvent(c);
             }
 
             return null;
