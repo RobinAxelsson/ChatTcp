@@ -5,10 +5,11 @@ namespace ChatTcp.Cli;
 internal class Program
 {
 
-    private static void Main(string[] args)
+    private static async Task Main(string[] args)
     {
         var renderer = new Renderer();
         var appState = new AppState();
+        using var keyHandler = new KeyHandler();
 
         appState.WindowWidth = Console.WindowWidth;
         appState.WindowHeight = Console.WindowHeight;
@@ -16,8 +17,14 @@ internal class Program
         appState.Messages.Add(new Message("Kalle", "Morning! :)"));
         appState.InputBuffer = "Morning boys!";
 
-        renderer.RenderApp(appState);
-        Console.Read();
+        var eventStream = KeyBinder.Bind(keyHandler.KeyStream);
+        var appStateHandler = new AppStateHandler(appState);
+        eventStream.Subscribe(appStateHandler.Handle);
+
+        var task = keyHandler.Start();
+        _ = renderer.Start(appState);
+
+        task.Wait();
     }
 }
 

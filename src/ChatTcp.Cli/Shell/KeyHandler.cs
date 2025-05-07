@@ -2,7 +2,7 @@
 
 namespace ChatTcp.Cli.ConsoleUi;
 
-internal class KeyHandler
+internal class KeyHandler : IDisposable
 {
     private CancellationTokenSource _cts = new();
     private readonly Subject<ConsoleKeyInfo> _keyStream = new();
