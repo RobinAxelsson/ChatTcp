@@ -18,8 +18,8 @@ internal class Program
         appState.InputBuffer = "Morning boys!";
 
         var eventStream = KeyBinder.Bind(keyHandler.KeyStream);
-        var appStateHandler = new AppStateHandler(appState);
-        eventStream.Subscribe(appStateHandler.Handle);
+        var appEventHandler = new AppEventHandler(appState);
+        eventStream.Subscribe(appEventHandler.Handle);
 
         var task = TaskExtensions.RunWithCrashOnException(keyHandler.Start);
         _ = TaskExtensions.RunWithCrashOnException(() => renderer.Start(appState));

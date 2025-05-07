@@ -13,8 +13,8 @@ internal class Renderer
         Console.CursorVisible = false;
         while (true)
         {
-            AddChatMessagesToFrameBuffer(appState.Messages);
-            SyncInputBufferWithFrame(appState.InputBuffer, appState.WindowHeight);
+            SyncChatMessages(appState.Messages);
+            SyncInputBuffer(appState.InputBuffer, appState.WindowHeight);
             AdjustCursor(appState.PromptingMode, appState.WindowHeight, appState.InputBuffer);
             Render();
 
@@ -30,12 +30,12 @@ internal class Renderer
         }
     }
 
-    private void SyncInputBufferWithFrame(string inputBuffer, int windowHeight)
+    private void SyncInputBuffer(string inputBuffer, int windowHeight)
     {
         var prompt = $"{ShellSettings.Prompt} {inputBuffer}";
         for (int x = 0; x < ShellSettings.FrameBufferWidth; x++)
         {
-            if(x < prompt.Length)
+            if (x < prompt.Length)
             {
                 _frameBuffer[x, windowHeight - ShellSettings.PromptHeight] = prompt[x];
                 continue;
@@ -46,20 +46,37 @@ internal class Renderer
         }
     }
 
-    private void AddChatMessagesToFrameBuffer(List<Message> messages)
+    private void SyncChatMessages(List<Message> messages)
     {
+        bool previousMessageIsCurrentUser = false;
+        int previousY = -1;
 
-        var chatMessages =  messages.Select(x => x.IsCurrentUser ? new String('\0', ShellSettings.CurrentUserMessageIndentation) + x.Content : $"{x.Sender}: {x.Content}").ToArray();
-
-        for (int y = 0; y < chatMessages.Count(); y++)
+        for (int i = 0; i < messages.Count; i++)
         {
-            var message = chatMessages[y];
+            var message = messages[i];
 
-            for (int x = 0; x < message.Length; x++)
+            var chatMessage = message.IsCurrentUser ? new String('\0', ShellSettings.CurrentUserMessageIndentation) + message.Content : $"{message.Sender}: {message.Content}";
+
+            int y = -1;
+            //To enable current user messages to appear underneath each other
+            if(previousY > -1 && previousMessageIsCurrentUser && message.IsCurrentUser)
             {
-                var c = message[x];
-                _frameBuffer[x, y * (ShellSettings.MessageSpacing + 1)] = c;
+                y = previousY + 1;
             }
+            //Message spacing on incoming messages
+            else
+            {
+                y = i * (ShellSettings.MessageSpacing + 1);
+            }
+
+            for (int x = 0; x < chatMessage.Length; x++)
+            {
+                var c = chatMessage[x];
+                _frameBuffer[x, y] = c;
+            }
+
+            previousMessageIsCurrentUser = message.IsCurrentUser;
+            previousY = y;
         }
     }
 
@@ -75,7 +92,7 @@ internal class Renderer
                 {
                     Console.SetCursorPosition(x, y);
 
-                    if(_frameBuffer[x, y] == '\0')
+                    if (_frameBuffer[x, y] == '\0')
                     {
                         Console.Write(' ');
                         Console.CursorLeft--;

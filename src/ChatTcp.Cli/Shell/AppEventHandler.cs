@@ -5,11 +5,11 @@ using ChatTcp.Cli.ConsoleUi;
 
 namespace ChatTcp.Cli;
 
-internal class AppStateHandler
+internal class AppEventHandler
 {
     private AppState _appState;
 
-    public AppStateHandler(AppState appState) => _appState = appState;
+    public AppEventHandler(AppState appState) => _appState = appState;
 
     public void Handle(AppEvent? appEvent)
     {
@@ -25,8 +25,11 @@ internal class AppStateHandler
                 break;
 
             case SendMessageEvent:
-                _appState.Messages.Add(new Message("", _appState.InputBuffer, true));
-                _appState.InputBuffer = "";
+                if(_appState.InputBuffer.Length > 0)
+                {
+                    _appState.Messages.Add(new Message("", _appState.InputBuffer, true));
+                    _appState.InputBuffer = "";
+                }
                 break;
 
             case BackspaceEvent:
