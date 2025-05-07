@@ -13,8 +13,8 @@ internal class Program
 
         appState.WindowWidth = Console.WindowWidth;
         appState.WindowHeight = Console.WindowHeight;
-        appState.Messages.Add(new Message("Bob", "Morning man!"));
-        appState.Messages.Add(new Message("Kalle", "Morning! :)"));
+        appState.Messages.Add(new Message("Bob", "Morning man!", false));
+        appState.Messages.Add(new Message("Kalle", "Morning! :)", false));
         appState.InputBuffer = "Morning boys!";
 
         var eventStream = KeyBinder.Bind(keyHandler.KeyStream);

@@ -49,12 +49,13 @@ internal class Renderer
     private void AddChatMessagesToFrameBuffer(List<Message> messages)
     {
 
-        var chatMessages =  messages.Select(x => x.Sender != "" ? $"{x.Sender}: {x.Content}" : x.Content).ToArray();
+        var chatMessages =  messages.Select(x => x.IsCurrentUser ? new String('\0', ShellSettings.CurrentUserMessageIndentation) + x.Content : $"{x.Sender}: {x.Content}").ToArray();
 
         for (int y = 0; y < chatMessages.Count(); y++)
         {
             var message = chatMessages[y];
-            for (global::System.Int32 x = 0; x < message.Length; x++)
+
+            for (int x = 0; x < message.Length; x++)
             {
                 var c = message[x];
                 _frameBuffer[x, y * (ShellSettings.MessageSpacing + 1)] = c;

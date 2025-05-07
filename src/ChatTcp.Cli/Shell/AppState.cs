@@ -1,6 +1,18 @@
 ﻿namespace ChatTcp.Cli.ConsoleUi;
 
-public record Message(string Sender, string Content);
+public record Message
+{
+    public Message(string sender, string content, bool currentUser)
+    {
+        Sender = sender;
+        IsCurrentUser = currentUser;
+        Content = content;
+    }
+
+    public string Sender { get; }
+    public bool IsCurrentUser { get; }
+    public string Content { get; }
+}
 internal class AppState
 {
     public bool PromptingMode = true;

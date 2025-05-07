@@ -25,7 +25,7 @@ internal class AppStateHandler
                 break;
 
             case SendMessageEvent:
-                _appState.Messages.Add(new Message("", _appState.InputBuffer));
+                _appState.Messages.Add(new Message("", _appState.InputBuffer, true));
                 _appState.InputBuffer = "";
                 break;
 

@@ -10,6 +10,6 @@ internal static class ShellSettings
     public const int FrameBufferWidth = 1000;
     public const int FrameBufferHeight = 500;
     public const int RefreshRate = 50; //milliseconds
-    public const int UserMessageIndentation = 10;
+    public const int CurrentUserMessageIndentation = 20;
 }
 
