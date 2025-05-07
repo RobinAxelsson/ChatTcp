@@ -7,31 +7,16 @@ internal class Program
 
     private static void Main(string[] args)
     {
-        var consoleUi = new Renderer();
-        var appWindow = new AppWindow();
-        var dashboard = new Frame(consoleUi.AddCharElement, appWindow);
-        var chat = new Chat(consoleUi.AddCharElement, appWindow);
-        consoleUi.RenderScreen();
+        var renderer = new Renderer();
+        var appState = new AppState();
+        appState.WindowWidth = Console.WindowWidth;
+        appState.WindowHeight = Console.WindowHeight;
+        appState.Messages.Add(new Message("Bob", "Morning man!"));
+        appState.Messages.Add(new Message("Kalle", "Morning! :)"));
+        appState.InputBuffer = "Morning boys!";
 
-        while (true)
-        {
-            InputBox.Activate(appWindow.GetInputArea(), chat.SubmitHostMessage);
-            consoleUi.RenderScreen();
-        }
-        //Console.WriteLine("Server (Y/n)");
-        //var serverQ = Console.ReadLine()?.ToLower();
-        //bool server = serverQ == "Y";
-
-        //if (server)
-        //{
-        //    using var messagServer = new MessageServer();
-        //    messagServer.Start();
-        //    Environment.Exit(0);
-        //}
-        //else
-        //{
-        //    MessageClient.ConnectToServer();
-        //}
+        renderer.RenderApp(appState);
+        Console.Read();
     }
 }
 
