@@ -8,17 +8,32 @@ internal class Renderer
     private char[,] _currentBuffer = new char[ShellSettings.FrameBufferWidth, ShellSettings.FrameBufferHeight];
     private char[,] _frameBuffer = new char[ShellSettings.FrameBufferWidth, ShellSettings.FrameBufferHeight];
 
-    public async Task Start(AppState appState)
+    public async Task Start(AppState appState, AppLifecycle appLifecycle)
     {
         Console.CursorVisible = false;
-        while (true)
+        try
         {
-            SyncChatMessages(appState.Messages);
-            SyncInputBuffer(appState.InputBuffer, appState.WindowHeight);
-            AdjustCursor(appState.PromptingMode, appState.WindowHeight, appState.InputBuffer);
-            Render();
+            while (true)
+            {
+                SyncChatMessages(appState.Messages);
+                SyncInputBuffer(appState.InputBuffer, appState.WindowHeight);
+                AdjustCursor(appState.PromptingMode, appState.WindowHeight, appState.InputBuffer);
 
-            await Task.Delay(ShellSettings.RefreshRate);
+                if (appLifecycle.Token.IsCancellationRequested)
+                {
+                    return;
+                }
+
+                Render();
+
+                await Task.Delay(ShellSettings.RefreshRate).ConfigureAwait(false);
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine("Render failed!");
+            Console.WriteLine(ex);
+            appLifecycle.RequestShutdown();
         }
     }
 
@@ -59,7 +74,7 @@ internal class Renderer
 
             int y = -1;
             //To enable current user messages to appear underneath each other
-            if(previousY > -1 && previousMessageIsCurrentUser && message.IsCurrentUser)
+            if (previousY > -1 && previousMessageIsCurrentUser && message.IsCurrentUser)
             {
                 y = previousY + 1;
             }

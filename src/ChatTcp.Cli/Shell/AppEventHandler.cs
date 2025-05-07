@@ -7,9 +7,15 @@ namespace ChatTcp.Cli;
 
 internal class AppEventHandler
 {
-    private AppState _appState;
+    private readonly AppState _appState;
+    private readonly AppLifecycle _appLifecycle;
 
-    public AppEventHandler(AppState appState) => _appState = appState;
+    public AppEventHandler(AppState appState, AppLifecycle appLifecycle)
+    {
+        _appState = appState;
+        _appLifecycle = appLifecycle;
+    }
+
 
     public void Handle(AppEvent? appEvent)
     {
@@ -38,8 +44,7 @@ internal class AppEventHandler
                 break;
 
             case QuitEvent:
-                Console.WriteLine("Exiting...");
-                Environment.Exit(0);
+                _appLifecycle.RequestShutdown();
                 break;
 
             default:
