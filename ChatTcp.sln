@@ -7,6 +7,12 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatTcp.Cli", "src\ChatTcp.
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{0F0173D3-54C9-4397-BD07-0892E88522CC}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatTcp.Server", "src\ChatTcp.Server\ChatTcp.Server.csproj", "{26A43F71-A2A7-4BC6-A1BA-AB25F0339A38}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{99B657B4-C9D5-4444-857E-F612AAB6A264}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatTcp.Tests", "test\ChatTcp.Tests\ChatTcp.Tests.csproj", "{1D3BFAB4-49F2-4B2D-AF23-7643925F568C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -17,14 +23,24 @@ Global
 		{39C6DD0A-C861-4EE9-98F2-55693BF499AF}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{39C6DD0A-C861-4EE9-98F2-55693BF499AF}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{39C6DD0A-C861-4EE9-98F2-55693BF499AF}.Release|Any CPU.Build.0 = Release|Any CPU
+		{26A43F71-A2A7-4BC6-A1BA-AB25F0339A38}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{26A43F71-A2A7-4BC6-A1BA-AB25F0339A38}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{26A43F71-A2A7-4BC6-A1BA-AB25F0339A38}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{26A43F71-A2A7-4BC6-A1BA-AB25F0339A38}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1D3BFAB4-49F2-4B2D-AF23-7643925F568C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1D3BFAB4-49F2-4B2D-AF23-7643925F568C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1D3BFAB4-49F2-4B2D-AF23-7643925F568C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1D3BFAB4-49F2-4B2D-AF23-7643925F568C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{39C6DD0A-C861-4EE9-98F2-55693BF499AF} = {0F0173D3-54C9-4397-BD07-0892E88522CC}
+		{26A43F71-A2A7-4BC6-A1BA-AB25F0339A38} = {0F0173D3-54C9-4397-BD07-0892E88522CC}
+		{1D3BFAB4-49F2-4B2D-AF23-7643925F568C} = {99B657B4-C9D5-4444-857E-F612AAB6A264}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		FileExplorer = 
+		FileExplorer =
 	EndGlobalSection
 EndGlobal

@@ -1,31 +1,51 @@
 ﻿using ChatTcp.Cli.ConsoleUi;
+using ChatTcp.Cli.Networking;
 
 namespace ChatTcp.Cli;
 
 internal class Program
 {
-
     private static async Task Main(string[] args)
     {
-        var renderer = new Renderer();
-        var appState = new AppState();
-        using var keyHandler = new KeyHandler();
-        using var appLifecycle = new AppLifecycle();
+        using var source = new CancellationTokenSource();
+        using var chatClient = new ChatClient();
+        var connectTask = chatClient.ConnectAsync(source.Token);
 
-        Seed(appState);
+        while (true)
+        {
+            var input = Console.ReadLine();
+            if (input == "cancel")
+            {
+                source.Cancel();
+                break;
+            }
 
-        var appEventObservables = KeyBinder.Bind(keyHandler.KeyStream);
+            if (!string.IsNullOrEmpty(input))
+            {
+                await chatClient.SendMessage(input);
+            }
+        }
 
-        var appEventHandler = new AppEventHandler(appState, appLifecycle);
-        appEventObservables.Subscribe(appEventHandler.Handle);
+        await connectTask;
+        //var renderer = new Renderer();
+        //var appState = new AppState();
+        //using var keyHandler = new KeyHandler();
+        //using var appLifecycle = new AppLifecycle();
 
-        var keyHandlerTask = keyHandler.Start(appLifecycle);
-        var renderTask = renderer.Start(appState, appLifecycle);
+        //Seed(appState);
 
-        Task.WaitAll(renderTask, keyHandlerTask);
+        //var appEventObservables = KeyBinder.Bind(keyHandler.KeyStream);
 
-        Console.Clear();
+        //var appEventHandler = new AppEventHandler(appState, appLifecycle);
+        //appEventObservables.Subscribe(appEventHandler.Handle);
+
+        //var keyHandlerTask = keyHandler.Start(appLifecycle);
+        //var renderTask = renderer.Start(appState, appLifecycle);
+
+        //await Task.WhenAll(renderTask, keyHandlerTask);
+
         Console.WriteLine("Exited gracefully");
+        Console.ReadKey();
     }
 
     private static void Seed(AppState appState)
