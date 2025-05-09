@@ -8,7 +8,7 @@ internal class Renderer
     private char[,] _currentBuffer = new char[ShellSettings.FrameBufferWidth, ShellSettings.FrameBufferHeight];
     private char[,] _frameBuffer = new char[ShellSettings.FrameBufferWidth, ShellSettings.FrameBufferHeight];
 
-    public async Task Start(AppState appState, AppLifecycle appLifecycle)
+    public async Task Start(AppState appState, CancellationToken cancellatioToken)
     {
         Console.CursorVisible = false;
         try
@@ -18,22 +18,16 @@ internal class Renderer
                 SyncChatMessages(appState.Messages);
                 SyncInputBuffer(appState.InputBuffer, appState.WindowHeight);
                 AdjustCursor(appState.PromptingMode, appState.WindowHeight, appState.InputBuffer);
-
-                if (appLifecycle.Token.IsCancellationRequested)
-                {
-                    return;
-                }
+                cancellatioToken.ThrowIfCancellationRequested();
 
                 Render();
 
-                await Task.Delay(ShellSettings.RefreshRate).ConfigureAwait(false);
+                await Task.Delay(ShellSettings.RefreshRate, cancellatioToken).ConfigureAwait(false);
             }
         }
-        catch (Exception ex)
+        catch (OperationCanceledException)
         {
-            Console.WriteLine("Render failed!");
-            Console.WriteLine(ex);
-            appLifecycle.RequestShutdown();
+            Console.WriteLine("Rendering canceled...");
         }
     }
 

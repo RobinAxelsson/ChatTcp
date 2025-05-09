@@ -34,10 +34,6 @@ internal static class TaskCancellationTests
         {
             Console.WriteLine("Cancelling long running process...");
         }
-        catch (Exception)
-        {
-            throw;
-        }
     }
 
     private static async Task CancellationListener(Action onCancellation, CancellationToken cancellationToken)
@@ -68,7 +64,7 @@ internal static class TaskCancellationTests
         }, source.Token);
 
         var task = await Task.WhenAny(cancellationTokenListener, longRunningWithCancellation, failingProcess);
-        Console.WriteLine("Canceling tasks...");
+        Console.WriteLine("Cancelling tasks...");
         source.Cancel();
         await Task.WhenAll(cancellationTokenListener, longRunningWithCancellation, failingProcess);
 
