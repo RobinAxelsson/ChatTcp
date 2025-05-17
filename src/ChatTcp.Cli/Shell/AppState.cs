@@ -1,5 +1,4 @@
 ﻿namespace ChatTcp.Cli.ConsoleUi;
-
 public record Message
 {
     public Message(string sender, string content, bool currentUser)

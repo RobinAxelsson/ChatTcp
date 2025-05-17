@@ -27,8 +27,8 @@ internal class Program
         var renderer = new Renderer();
         var appState = new AppState();
         using var keyHandler = new KeyHandler();
-        using var appLifecycle = new AppLifecycle();
-        var appEventHandler = new AppEventHandler(appState, appLifecycle);
+        using var cts = new CancellationTokenSource();
+        var appEventHandler = new AppEventHandler(appState, cts);
 
         Seed(appState);
 
@@ -36,15 +36,14 @@ internal class Program
         var appEventObservables = KeyBinder.Bind(keyHandler.KeyStream);
         appEventObservables.Subscribe(appEventHandler.Handle);
 
-        var keyHandlerTask = keyHandler.Start(appLifecycle.Token);
-        var renderTask = renderer.Start(appState, appLifecycle.Token);
-
-        var firstTask = await Task.WhenAny(renderTask, keyHandlerTask);
+        var keyHandlerTask = keyHandler.Start(cts.Token);
+        var renderTask = renderer.Start(appState, cts.Token);
+        var firstTask = await Task.WhenAny(renderTask, keyHandlerTask, windowHandlerTask);
 
         if (firstTask.IsFaulted)
         {
             Console.WriteLine("Task faulted...");
-            appLifecycle.RequestShutdown();
+            cts.Cancel();
         }
         await Task.WhenAll(keyHandlerTask, renderTask); //Exceptions are caught and printed to console
         Console.WriteLine("Exited gracefully");

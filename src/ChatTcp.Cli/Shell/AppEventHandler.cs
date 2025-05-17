@@ -8,12 +8,12 @@ namespace ChatTcp.Cli;
 internal class AppEventHandler
 {
     private readonly AppState _appState;
-    private readonly AppLifecycle _appLifecycle;
+    private readonly CancellationTokenSource _cts;
 
-    public AppEventHandler(AppState appState, AppLifecycle appLifecycle)
+    public AppEventHandler(AppState appState, CancellationTokenSource cts)
     {
         _appState = appState;
-        _appLifecycle = appLifecycle;
+        _cts = cts;
     }
 
 
@@ -49,7 +49,7 @@ internal class AppEventHandler
                 break;
 
             case QuitEvent:
-                _appLifecycle.RequestShutdown();
+                _cts.Cancel();
                 break;
 
             default:
