@@ -77,7 +77,7 @@ internal class Renderer
     {
         if (cursorIndex < 0 || cursorIndex > inputBuffer.Length)
         {
-            throw new ArgumentOutOfRangeException($"Cursor index must be within the input buffer length or one place outside. CursorIndex: {cursorIndex}, bufferLength: {inputBuffer.Length}, inputBuffer: {inputBuffer}");
+            throw new ShellException($"Cursor index must be within the input buffer length or one place outside. CursorIndex: {cursorIndex}, bufferLength: {inputBuffer.Length}, inputBuffer: {inputBuffer}");
         }
 
         var x = ShellSettings.Prompt.Length + cursorIndex + 1;
@@ -91,18 +91,21 @@ internal class Renderer
         var prompt = $"{ShellSettings.Prompt} {inputBuffer}";
         var maxWidth = ShellSettings.FrameBufferWidth < (windowWidth - 1) ? ShellSettings.FrameBufferWidth : (windowWidth - 1);
 
-        if (windowHeight < ShellSettings.PromptHeight) return;
+        //just to not break the program on small windows
+        if (windowHeight < ShellSettings.PromptHeight)
+            return;
 
         for (int x = 0; x < maxWidth; x++)
         {
+            var y = windowHeight - ShellSettings.PromptHeight;
             if (x < prompt.Length)
             {
-                _frameBuffer[x, windowHeight - ShellSettings.PromptHeight] = prompt[x];
+                _frameBuffer[x, y] = prompt[x];
                 continue;
             }
 
             //flush deleted chars
-            _frameBuffer[x, windowHeight - ShellSettings.PromptHeight] = ' ';
+            _frameBuffer[x, y] = ' ';
         }
     }
 
@@ -164,18 +167,18 @@ internal class Renderer
                             Console.Write(_frameBuffer[x, y]);
                         }
                     }
-                    catch (Exception ex)
+                    catch (IOException ex)
                     {
-                        if (ex is IOException && !ex.Message.Contains("The parameter is incorrect"))
+                        if (!ex.Message.Contains("The parameter is incorrect"))
                         {
-                            continue;
+                            throw;
                         }
-
-                        if (ex is ArgumentOutOfRangeException)
+                        }
+                    catch (ArgumentOutOfRangeException)
                         {
-                            continue;
+                        //Allow the console window to be 0
                         }
-
+                    catch (Exception ex) {
                         var currentChar = _currentBuffer[x, y];
                         var frameChar = _frameBuffer[x, y];
                         throw new ShellException($"Exception when trying to draw to console... Console.WindowWidth {Console.WindowWidth}, x = '{x}', Console.WindowHeight: '{Console.WindowHeight}', y: '{y}', currentChar: '{(currentChar == '\0' ? "null" : currentChar)}', frameChar: '{(frameChar == '\0' ? "null" : frameChar)}'", ex);
