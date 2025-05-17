@@ -1,6 +1,4 @@
 ﻿using ChatTcp.Cli.ConsoleUi;
-using ChatTcp.Cli.Networking;
-
 namespace ChatTcp.Cli;
 
 internal class Program
@@ -55,8 +53,6 @@ internal class Program
 
     private static void Seed(AppState appState)
     {
-        appState.WindowWidth = Console.WindowWidth;
-        appState.WindowHeight = Console.WindowHeight;
         appState.Messages.Add(new Message("Bob", "Morning man!", false));
         appState.Messages.Add(new Message("Kalle", "Morning! :)", false));
         appState.InputBuffer = "Morning boys!";

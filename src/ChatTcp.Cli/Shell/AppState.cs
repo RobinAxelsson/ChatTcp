@@ -20,8 +20,6 @@ internal class AppState
 
     public List<Message> Messages { get; } = new();
     public string InputBuffer { get; set; } = string.Empty;
-    public int WindowWidth { get; set; }
-    public int WindowHeight { get; set; }
     public int CursorIndex
     {
         get => _cursorIndex ??= InputBuffer.Length;
