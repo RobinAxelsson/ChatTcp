@@ -4,7 +4,7 @@ namespace ChatTcp.Cli;
 
 internal class KeyBinder
 {
-    public static IObservable<AppEvent?> Bind(IObservable<ConsoleKeyInfo> keyStream)
+    public static IObservable<AppEvent?> BindKeysToEvents(IObservable<ConsoleKeyInfo> keyStream)
     {
         return keyStream.Select(key =>
         {

@@ -32,13 +32,12 @@ internal class Program
 
         Seed(appState);
 
-
-        var appEventObservables = KeyBinder.Bind(keyHandler.KeyStream);
-        appEventObservables.Subscribe(appEventHandler.Handle);
+        var keyPressEvents = KeyBinder.BindKeysToEvents(keyHandler.KeyStream);
+        keyPressEvents.Subscribe(appEventHandler.Handle);
 
         var keyHandlerTask = keyHandler.Start(cts.Token);
         var renderTask = renderer.Start(appState, cts.Token);
-        var firstTask = await Task.WhenAny(renderTask, keyHandlerTask, windowHandlerTask);
+        var firstTask = await Task.WhenAny(renderTask, keyHandlerTask);
 
         if (firstTask.IsFaulted)
         {
