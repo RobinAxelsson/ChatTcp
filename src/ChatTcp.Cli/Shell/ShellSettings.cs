@@ -14,5 +14,6 @@ internal static class ShellSettings
     public const int RefreshRate = 50; //milliseconds
     public const int KeyHandlerDelay = 10;
     public const int CurrentUserMessageIndentation = 20;
+    public const char Cursor = '█';
 }
 

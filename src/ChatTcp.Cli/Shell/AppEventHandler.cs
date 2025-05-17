@@ -26,8 +26,9 @@ internal class AppEventHandler
 
         switch (appEvent)
         {
-            case TextInputEvent textEvent:
+            case CharInputEvent textEvent:
                 _appState.InputBuffer += textEvent.Character;
+                _appState.CursorIndex++;
                 break;
 
             case SendMessageEvent:
@@ -35,12 +36,16 @@ internal class AppEventHandler
                 {
                     _appState.Messages.Add(new Message("", _appState.InputBuffer, true));
                     _appState.InputBuffer = "";
+                    _appState.CursorIndex = 0;
                 }
                 break;
 
             case BackspaceEvent:
                 if (_appState.InputBuffer.Length > 0)
+                {
                     _appState.InputBuffer = _appState.InputBuffer[..^1];
+                    _appState.CursorIndex--;
+                }
                 break;
 
             case QuitEvent:

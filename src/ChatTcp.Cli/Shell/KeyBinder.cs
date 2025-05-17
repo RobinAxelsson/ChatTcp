@@ -27,7 +27,7 @@ internal class KeyBinder
             {
                 if (char.IsLetterOrDigit(key.KeyChar) || char.IsPunctuation(key.KeyChar) || char.IsSymbol(key.KeyChar))
                 {
-                    return new TextInputEvent(key.KeyChar);
+                    return new CharInputEvent(key.KeyChar);
                 }
             }
 
@@ -39,7 +39,7 @@ internal class KeyBinder
                     c = char.ToUpper(c);
                 }
 
-                return new TextInputEvent(c);
+                return new CharInputEvent(c);
             }
 
             return null;

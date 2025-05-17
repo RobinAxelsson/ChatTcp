@@ -2,11 +2,11 @@
 
 internal abstract class AppEvent { }
 
-internal class TextInputEvent : AppEvent
+internal class CharInputEvent : AppEvent
 {
     public char Character { get; }
 
-    public TextInputEvent(char character)
+    public CharInputEvent(char character)
     {
         Character = character;
     }
