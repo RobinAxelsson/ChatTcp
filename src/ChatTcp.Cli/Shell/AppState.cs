@@ -15,7 +15,6 @@ public record Message
 }
 internal class AppState
 {
-    public bool PromptingMode = true;
     private int? _cursorIndex;
 
     public List<Message> Messages { get; } = new();

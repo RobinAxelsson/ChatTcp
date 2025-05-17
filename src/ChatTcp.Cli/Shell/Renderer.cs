@@ -19,10 +19,10 @@ internal class Renderer
 
             var windowWidth = -1;
             var windowHeight = -1;
-            
+
             while (true)
             {
-                if(windowWidth != GetWindowWidth() || windowHeight != GetWindowHeight())
+                if (windowWidth != GetWindowWidth() || windowHeight != GetWindowHeight())
                 {
                     RefreshScreen();
                     windowWidth = GetWindowWidth();
@@ -31,9 +31,9 @@ internal class Renderer
 
                 SyncChatMessages(appState.Messages);
                 SyncInputBuffer(appState.InputBuffer, windowWidth, windowHeight);
-                cancellatioToken.ThrowIfCancellationRequested();
                 SyncCursor(appState.CursorIndex, appState.InputBuffer, windowHeight);
 
+                cancellatioToken.ThrowIfCancellationRequested();
                 Render(windowWidth, windowHeight);
 
                 await Task.Delay(ShellSettings.RefreshRate, cancellatioToken).ConfigureAwait(false);
@@ -51,9 +51,17 @@ internal class Renderer
 
     private void RefreshScreen()
     {
-        if(GetWindowHeight() > 0 && GetWindowWidth() > 0)
+        if (GetWindowHeight() > 0 && GetWindowWidth() > 0)
         {
-            Console.Clear();
+            try
+            {
+                Console.Clear();
+            }
+            catch (IOException ex)
+            {
+                if (!ex.Message.Contains("The parameter is incorrect"))
+                    throw;
+            }
         }
         for (int x = 0; x < ShellSettings.FrameBufferWidth; x++)
         {
@@ -158,15 +166,24 @@ internal class Renderer
                     }
                     catch (Exception ex)
                     {
-                        //Allow to draw to fail
-                        //var currentChar = _currentBuffer[x, y];
-                        //var frameChar = _frameBuffer[x, y];
-                        //throw new ShellException($"ArgumentOutOfRangeException when trying to set the cursor position, Console.WindowWidth {Console.WindowWidth}, x = '{x}', Console.WindowHeight: '{Console.WindowHeight}', y: '{y}', currentChar: '{(currentChar == '\0' ? "null" : currentChar)}', frameChar: '{(frameChar == '\0' ? "null" : frameChar)}'", ex);
-                    }
+                        if (ex is IOException && !ex.Message.Contains("The parameter is incorrect"))
+                        {
+                            continue;
+                        }
 
-                    _currentBuffer[x, y] = _frameBuffer[x, y];
+                        if (ex is ArgumentOutOfRangeException)
+                        {
+                            continue;
+                        }
+
+                        var currentChar = _currentBuffer[x, y];
+                        var frameChar = _frameBuffer[x, y];
+                        throw new ShellException($"Exception when trying to draw to console... Console.WindowWidth {Console.WindowWidth}, x = '{x}', Console.WindowHeight: '{Console.WindowHeight}', y: '{y}', currentChar: '{(currentChar == '\0' ? "null" : currentChar)}', frameChar: '{(frameChar == '\0' ? "null" : frameChar)}'", ex);
+                    }
                 }
+                _currentBuffer[x, y] = _frameBuffer[x, y];
             }
+
         }
     }
 }
