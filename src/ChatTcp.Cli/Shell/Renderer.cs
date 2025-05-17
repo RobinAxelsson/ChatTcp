@@ -17,8 +17,8 @@ internal class Renderer
         {
             Console.CursorVisible = false;
 
-            var windowWidth = GetWindowWidth();
-            var windowHeight = GetWindowHeight();
+            var windowWidth = -1;
+            var windowHeight = -1;
             
             while (true)
             {
@@ -34,7 +34,7 @@ internal class Renderer
                 cancellatioToken.ThrowIfCancellationRequested();
                 SyncCursor(appState.CursorIndex, appState.InputBuffer, windowHeight);
 
-                Render();
+                Render(windowWidth, windowHeight);
 
                 await Task.Delay(ShellSettings.RefreshRate, cancellatioToken).ConfigureAwait(false);
             }
@@ -132,38 +132,36 @@ internal class Renderer
         }
     }
 
-    private void Render()
+    private void Render(int windowWidth, int windowHeight)
     {
-        for (int x = 0; x < ShellSettings.FrameBufferWidth; x++)
+        for (int x = 0; x < windowWidth; x++)
         {
 
-            for (int y = 0; y < ShellSettings.FrameBufferHeight; y++)
+            for (int y = 0; y < windowHeight; y++)
             {
-                if (x >= (GetWindowWidth()-1)) break; //always check the console width before drawing
-                if (y >= (GetWindowHeight()-1)) break;
-
                 if (_frameBuffer[x, y] != _currentBuffer[x, y])
                 {
                     try
                     {
                         Console.SetCursorPosition(x, y);
-                    }
-                    catch (ArgumentOutOfRangeException ex)
-                    {
-                        var currentChar = _currentBuffer[x, y];
-                        var frameChar = _frameBuffer[x, y];
-                        throw new ShellException($"ArgumentOutOfRangeException when trying to set the cursor position, Console.WindowWidth {Console.WindowWidth}, x = '{x}', Console.WindowHeight: '{Console.WindowHeight}', y: '{y}', currentChar: '{(currentChar == '\0' ? "null" : currentChar)}', frameChar: '{(frameChar == '\0' ? "null" : frameChar)}'", ex);
-                    }
 
-                    if (_frameBuffer[x, y] == '\0')
-                    {
-                        Console.Write(' ');
-                        Console.CursorLeft--;
-                        continue;
+                        if (_frameBuffer[x, y] == '\0')
+                        {
+                            Console.Write(' ');
+                            Console.CursorLeft--;
+                            continue;
+                        }
+                        else
+                        {
+                            Console.Write(_frameBuffer[x, y]);
+                        }
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        Console.Write(_frameBuffer[x, y]);
+                        //Allow to draw to fail
+                        //var currentChar = _currentBuffer[x, y];
+                        //var frameChar = _frameBuffer[x, y];
+                        //throw new ShellException($"ArgumentOutOfRangeException when trying to set the cursor position, Console.WindowWidth {Console.WindowWidth}, x = '{x}', Console.WindowHeight: '{Console.WindowHeight}', y: '{y}', currentChar: '{(currentChar == '\0' ? "null" : currentChar)}', frameChar: '{(frameChar == '\0' ? "null" : frameChar)}'", ex);
                     }
 
                     _currentBuffer[x, y] = _frameBuffer[x, y];
