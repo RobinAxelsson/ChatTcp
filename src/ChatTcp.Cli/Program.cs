@@ -51,8 +51,8 @@ internal class Program
 
     private static void Seed(AppState appState)
     {
-        appState.Messages.Add(new Message("Bob", "Morning man!", false));
-        appState.Messages.Add(new Message("Kalle", "Morning! :)", false));
+        appState.Messages.Add(ChatMessage.FromOtherUser("Bob", "Morning man!"));
+        appState.Messages.Add(ChatMessage.FromOtherUser("Kalle", "Morning! :)"));
         appState.InputBuffer = "Morning boys!";
     }
 }

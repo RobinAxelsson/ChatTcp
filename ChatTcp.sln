@@ -11,7 +11,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatTcp.Server", "src\ChatT
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{99B657B4-C9D5-4444-857E-F612AAB6A264}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatTcp.Tests", "test\ChatTcp.Tests\ChatTcp.Tests.csproj", "{1D3BFAB4-49F2-4B2D-AF23-7643925F568C}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatTcp.Cli.Test", "test\ChatTcp.Cli.Test\ChatTcp.Cli.Test.csproj", "{1D3BFAB4-49F2-4B2D-AF23-7643925F568C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -41,6 +41,6 @@ Global
 		{1D3BFAB4-49F2-4B2D-AF23-7643925F568C} = {99B657B4-C9D5-4444-857E-F612AAB6A264}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		FileExplorer =
+		SolutionGuid = {79D89674-636D-4A39-9455-E1D127517D27}
 	EndGlobalSection
 EndGlobal

@@ -1,4 +1,6 @@
-﻿namespace ChatTcp.Cli;
+﻿using ChatTcp.Cli.ConsoleUi;
+
+namespace ChatTcp.Cli;
 
 internal abstract class AppEvent { }
 
@@ -10,6 +12,16 @@ internal class CharInputEvent : AppEvent
     {
         Character = character;
     }
+}
+
+internal class ReceiveMessageEvent : AppEvent
+{
+    public ReceiveMessageEvent(ChatMessage chatMessage)
+    {
+        ChatMessage = chatMessage;
+    }
+
+    public ChatMessage ChatMessage { get; }
 }
 
 internal class BackspaceEvent : AppEvent { }

@@ -16,7 +16,6 @@ internal class AppEventHandler
         _cts = cts;
     }
 
-
     public void Handle(AppEvent? appEvent)
     {
         if(appEvent == null)
@@ -34,7 +33,7 @@ internal class AppEventHandler
             case SendMessageEvent:
                 if(_appState.InputBuffer.Length > 0)
                 {
-                    _appState.Messages.Add(new Message("", _appState.InputBuffer, true));
+                    _appState.Messages.Add(ChatMessage.FromCurrentUser(_appState.InputBuffer));
                     _appState.InputBuffer = "";
                     _appState.CursorIndex = 0;
                 }
@@ -46,6 +45,10 @@ internal class AppEventHandler
                     _appState.InputBuffer = _appState.InputBuffer[..^1];
                     _appState.CursorIndex--;
                 }
+                break;
+
+            case ReceiveMessageEvent receiveMessageEvent:
+                _appState.Messages.Add(receiveMessageEvent.ChatMessage);
                 break;
 
             case QuitEvent:
