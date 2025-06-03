@@ -4,11 +4,24 @@ namespace ChatTcp.Cli.Shell;
 internal record AppState
 {
     private int? _cursorIndex;
-    public List<ChatMessage> Messages { get; } = new();
-    public string InputBuffer { get; set; } = string.Empty;
+
+    public required IReadOnlyCollection<ChatMessage> Messages { get; init; } = [];
+    public required string InputBuffer { get; init; } = string.Empty;
     public int CursorIndex
     {
         get => _cursorIndex ??= InputBuffer.Length;
-        set => _cursorIndex = value;
+        init => _cursorIndex = value;
     }
+
+#if DEBUG
+    public static AppState Debug => new AppState()
+    {
+        Messages =
+        [
+            ChatMessage.FromOtherUser("Bob", "Morning man!"),
+            ChatMessage.FromOtherUser("Kalle", "Morning! :)")
+            ],
+        InputBuffer = "Morning boys!"
+    };
+#endif
 }

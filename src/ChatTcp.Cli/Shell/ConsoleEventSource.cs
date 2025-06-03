@@ -47,8 +47,8 @@ internal sealed class ConsoleEventSource : IDisposable
     private static AppEvent? MapKeyToEvent(ConsoleKeyInfo key)
     {
         if (key.Key == ConsoleKey.Backspace) return new BackspaceEvent();
-        if (key.Key == ConsoleKey.Enter) return new SendMessageEvent();
-        if (key.Key == ConsoleKey.Escape) return new QuitEvent();
+        if (key.Key == ConsoleKey.Enter) return new PressEnterEvent();
+        if (key.Key == ConsoleKey.Escape) return new PressEscapeEvent();
 
         var modifiers = key.Modifiers;
 

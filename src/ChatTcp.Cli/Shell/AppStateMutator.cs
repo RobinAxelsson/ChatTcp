@@ -1,0 +1,87 @@
+﻿// Licensed to the .NET Foundation under one or more agreements.
+// The .NET Foundation licenses this file to you under the MIT license.
+
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
+using ChatTcp.Cli.Shell.Models;
+
+namespace ChatTcp.Cli.Shell;
+
+internal class AppStateMutator
+{
+#if DEBUG
+    private AppState _lastAppState = AppState.Debug;
+#else
+    private AppState _lastAppState = new AppState();
+#endif
+    private readonly Subject<AppState> _appStateStream = new();
+    private readonly CancellationTokenSource _cts;
+    private List<ChatMessage> _chatMessages = new();
+    public IObservable<AppState> Events => _appStateStream.AsObservable();
+
+    public AppStateMutator(CancellationTokenSource cts)
+    {
+        _cts = cts;
+    }
+
+    public void Handle(AppEvent? appEvent)
+    {
+        if(appEvent == null)
+        {
+            throw new ArgumentNullException(nameof(appEvent));
+        }
+
+        AppState? appState = null;
+
+        switch (appEvent)
+        {
+            case CharInputEvent charInputEvent:
+                appState = _lastAppState with {
+                    InputBuffer = _lastAppState.InputBuffer + charInputEvent.Chr,
+                    CursorIndex = _lastAppState.CursorIndex + 1
+                };
+
+                _appStateStream.OnNext(appState);
+                break;
+
+            case PressEnterEvent:
+                if(_lastAppState.InputBuffer.Length > 0)
+                {
+                    _chatMessages.Add(ChatMessage.FromCurrentUser(_lastAppState.InputBuffer));
+
+                    appState = _lastAppState with
+                    {
+                        Messages = _chatMessages,
+                        InputBuffer = "",
+                        CursorIndex = 0
+                    };
+
+                    _appStateStream.OnNext(appState);
+                }
+                break;
+
+            case BackspaceEvent:
+                if (_lastAppState.InputBuffer.Length > 0)
+                {
+                    appState = _lastAppState with { InputBuffer = _lastAppState.InputBuffer[..^1], CursorIndex = _lastAppState.CursorIndex - 1 };
+                    _appStateStream.OnNext(appState);
+                }
+                break;
+
+            case MessageReceivedEvent receiveMessageEvent:
+                _chatMessages.Add(receiveMessageEvent.ChatMessage);
+                appState = _lastAppState with { Messages = _chatMessages };
+                _appStateStream.OnNext(appState);
+                break;
+
+            case PressEscapeEvent:
+                _cts.Cancel();
+                break;
+
+            default:
+                throw new ArgumentException("Unknown app event");
+        }
+
+        _lastAppState = appState ?? _lastAppState;
+    }
+}

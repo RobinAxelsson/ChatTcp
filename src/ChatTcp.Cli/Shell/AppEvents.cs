@@ -6,11 +6,11 @@ internal abstract class AppEvent { }
 
 internal class CharInputEvent : AppEvent
 {
-    public char Character { get; }
+    public char Chr { get; }
 
     public CharInputEvent(char character)
     {
-        Character = character;
+        Chr = character;
     }
 }
 internal class ConnectedEvent : AppEvent;
@@ -28,9 +28,9 @@ internal class MessageReceivedEvent : AppEvent
 
 internal class BackspaceEvent : AppEvent { }
 
-internal class SendMessageEvent : AppEvent { }
+internal class PressEnterEvent : AppEvent { }
 
-internal class QuitEvent : AppEvent { }
+internal class PressEscapeEvent : AppEvent { }
 
 internal class WindowResizedEvent : AppEvent
 {
