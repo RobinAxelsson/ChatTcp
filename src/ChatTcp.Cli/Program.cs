@@ -9,23 +9,29 @@ internal class Program
     {
         using var cts = new CancellationTokenSource();
 
-        using var console = new EventSourceUser();
-        using var network = new EventSourceNetwork();
-        var éventStream = Observable.Merge(console.Events, network.Events);
+        using var userInputManager = new UserInputManager();
+        using var networkManager = new NetworkManager();
+        var éventStream = Observable.Merge(userInputManager.Events, networkManager.Events);
 
-        var appEventHandler = new AppEventHandler(cts);
+        var appEventHandler = new AppEventHandler(cts, networkManager.SendChatMessage);
         éventStream.Subscribe(appEventHandler.Handle);
 
         var renderer = new Renderer();
-        appEventHandler.Events.Subscribe(renderer.Render);
+        appEventHandler.AppStateStream.Subscribe(renderer.Render);
 
         var tasks = new[]
         {
-            console.Start(cts.Token),
-            network.StartAsync(cts.Token)
+            userInputManager.Start(cts.Token),
+            networkManager.StartAsync(cts.Token)
         };
 
-        Console.CancelKeyPress += (_, _) => cts.Cancel();
+        var firstTask = Task.WhenAny(tasks);
+
+        if (firstTask.IsFaulted)
+        {
+            cts.Cancel();
+        }
+
         await Task.WhenAll(tasks);
     }
 }

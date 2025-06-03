@@ -5,7 +5,7 @@ using ChatTcp.Cli.Shell.Models;
 
 namespace ChatTcp.Cli.Shell;
 
-internal sealed class EventSourceNetwork : IDisposable
+internal sealed class NetworkManager : IDisposable
 {
     private readonly NetworkClient _networkClient = new NetworkClient();
     private readonly Subject<AppEvent> _events = new();
@@ -42,6 +42,11 @@ internal sealed class EventSourceNetwork : IDisposable
             _events.OnNext(new DisconnectedEvent());
             _events.OnCompleted();
         }
+    }
+
+    public Task SendChatMessage(ChatMessage chatMessage)
+    {
+        throw new NotImplementedException();
     }
 
     public void Dispose()
