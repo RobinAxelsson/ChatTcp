@@ -5,27 +5,23 @@ using ChatTcp.Cli.Shell.Models;
 
 namespace ChatTcp.Cli.Shell;
 
-internal sealed class NetworkEventSource
+internal sealed class EventSourceNetwork : IDisposable
 {
-    private readonly NetworkTransport _transport;
+    private readonly NetworkClient _networkClient = new NetworkClient();
     private readonly Subject<AppEvent> _events = new();
 
     public IObservable<AppEvent> Events => _events.AsObservable();
 
-    public NetworkEventSource(NetworkTransport transport)
-    {
-        _transport = transport;
-    }
-
     public async Task StartAsync(CancellationToken ct)
     {
+        await _networkClient.ConnectAsync("localhost", 8888);
         _events.OnNext(new ConnectedEvent());
 
         try
         {
             while (!ct.IsCancellationRequested)
             {
-                var networkString = await _transport.ReadLineAsync(ct);
+                var networkString = await _networkClient.ReadLineAsync(ct);
                 if (networkString != null)
                 {
                     var message = JsonSerializer.Deserialize<ChatMessage>(networkString);
@@ -52,6 +48,7 @@ internal sealed class NetworkEventSource
     {
         _events.OnCompleted();
         _events.Dispose();
+        _networkClient.Dispose();
     }
 }
 

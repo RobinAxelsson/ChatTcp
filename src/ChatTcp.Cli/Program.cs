@@ -9,20 +9,15 @@ internal class Program
     {
         using var cts = new CancellationTokenSource();
 
-        using var transport = new NetworkTransport();
-        await transport.ConnectAsync("localhost", 8888);
+        using var console = new EventSourceUser();
+        using var network = new EventSourceNetwork();
+        var éventStream = Observable.Merge(console.Events, network.Events);
 
-        using var console = new ConsoleEventSource();
-        var network = new NetworkEventSource(transport);
-        var mergedEvents = Observable.Merge(console.Events, network.Events);
-
-        var appStateMutator = new AppStateMutator(cts);
-        mergedEvents.Subscribe(appStateMutator.Handle);
+        var appEventHandler = new AppEventHandler(cts);
+        éventStream.Subscribe(appEventHandler.Handle);
 
         var renderer = new Renderer();
-        appStateMutator.Events.Subscribe(renderer.Render);
-
-        Console.CancelKeyPress += (_, _) => cts.Cancel();
+        appEventHandler.Events.Subscribe(renderer.Render);
 
         var tasks = new[]
         {

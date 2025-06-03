@@ -3,7 +3,7 @@ using System.Text;
 
 namespace ChatTcp.Cli.Shell;
 
-internal sealed class NetworkTransport : IDisposable
+internal sealed class NetworkClient : IDisposable
 {
     private readonly TcpClient _tcpClient = new();
     private NetworkStream? _networkStream;
