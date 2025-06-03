@@ -3,17 +3,14 @@
 
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Threading.Tasks.Dataflow;
 using ChatTcp.Cli.Shell.Models;
 
 namespace ChatTcp.Cli.Shell;
 
 internal class AppStateMutator
 {
-#if DEBUG
-    private AppState _lastAppState = AppState.Debug;
-#else
-    private AppState _lastAppState = new AppState();
-#endif
+    private AppState _lastAppState = new();
     private readonly Subject<AppState> _appStateStream = new();
     private readonly CancellationTokenSource _cts;
     private List<ChatMessage> _chatMessages = new();
@@ -35,13 +32,19 @@ internal class AppStateMutator
 
         switch (appEvent)
         {
+            case ConsoleStartupEvent cse:
+                appState = _lastAppState with { WindowHeight = cse.WindowHeight, WindowWidth = cse.WindowWidth };
+                break;
+
+            case WindowResizedEvent windowResized:
+                appState = _lastAppState with { WindowHeight = windowResized.Height, WindowWidth = windowResized.Width };
+                break;
+
             case CharInputEvent charInputEvent:
                 appState = _lastAppState with {
                     InputBuffer = _lastAppState.InputBuffer + charInputEvent.Chr,
                     CursorIndex = _lastAppState.CursorIndex + 1
                 };
-
-                _appStateStream.OnNext(appState);
                 break;
 
             case PressEnterEvent:
@@ -55,8 +58,6 @@ internal class AppStateMutator
                         InputBuffer = "",
                         CursorIndex = 0
                     };
-
-                    _appStateStream.OnNext(appState);
                 }
                 break;
 
@@ -64,14 +65,12 @@ internal class AppStateMutator
                 if (_lastAppState.InputBuffer.Length > 0)
                 {
                     appState = _lastAppState with { InputBuffer = _lastAppState.InputBuffer[..^1], CursorIndex = _lastAppState.CursorIndex - 1 };
-                    _appStateStream.OnNext(appState);
                 }
                 break;
 
-            case MessageReceivedEvent receiveMessageEvent:
+            case NetworkReceiveEvent receiveMessageEvent:
                 _chatMessages.Add(receiveMessageEvent.ChatMessage);
                 appState = _lastAppState with { Messages = _chatMessages };
-                _appStateStream.OnNext(appState);
                 break;
 
             case PressEscapeEvent:
@@ -81,7 +80,10 @@ internal class AppStateMutator
             default:
                 throw new ArgumentException("Unknown app event");
         }
-
-        _lastAppState = appState ?? _lastAppState;
+        if(appState != null)
+        {
+            _appStateStream.OnNext(appState);
+            _lastAppState = appState;
+        }
     }
 }

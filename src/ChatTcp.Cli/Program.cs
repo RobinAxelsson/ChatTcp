@@ -14,12 +14,12 @@ internal class Program
 
         using var console = new ConsoleEventSource();
         var network = new NetworkEventSource(transport);
-        var renderer = new Renderer();
         var mergedEvents = Observable.Merge(console.Events, network.Events);
 
         var appStateMutator = new AppStateMutator(cts);
         mergedEvents.Subscribe(appStateMutator.Handle);
 
+        var renderer = new Renderer();
         appStateMutator.Events.Subscribe(renderer.Render);
 
         Console.CancelKeyPress += (_, _) => cts.Cancel();

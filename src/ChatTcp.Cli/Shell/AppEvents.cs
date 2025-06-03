@@ -16,9 +16,9 @@ internal class CharInputEvent : AppEvent
 internal class ConnectedEvent : AppEvent;
 internal class DisconnectedEvent : AppEvent;
 
-internal class MessageReceivedEvent : AppEvent
+internal class NetworkReceiveEvent : AppEvent
 {
-    public MessageReceivedEvent(ChatMessage chatMessage)
+    public NetworkReceiveEvent(ChatMessage chatMessage)
     {
         ChatMessage = chatMessage;
     }
@@ -31,6 +31,12 @@ internal class BackspaceEvent : AppEvent { }
 internal class PressEnterEvent : AppEvent { }
 
 internal class PressEscapeEvent : AppEvent { }
+
+internal class ConsoleStartupEvent : AppEvent
+{
+    public required int WindowWidth { get; init; }
+    public required int WindowHeight { get; init; }
+}
 
 internal class WindowResizedEvent : AppEvent
 {

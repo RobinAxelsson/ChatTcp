@@ -33,7 +33,7 @@ internal sealed class NetworkEventSource
                     if( message == null)
                         throw new ShellException("Failed serialize text string: " + networkString);
 
-                    _events.OnNext(new MessageReceivedEvent(message));
+                    _events.OnNext(new NetworkReceiveEvent(message));
                 }
             }
         }

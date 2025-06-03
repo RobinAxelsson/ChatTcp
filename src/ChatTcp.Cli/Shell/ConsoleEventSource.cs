@@ -14,6 +14,8 @@ internal sealed class ConsoleEventSource : IDisposable
         int lastWidth = Console.WindowWidth;
         int lastHeight = Console.WindowHeight;
 
+        _eventStream.OnNext(new ConsoleStartupEvent() { WindowHeight = lastHeight, WindowWidth = lastWidth });
+
         try
         {
             while (!token.IsCancellationRequested)
