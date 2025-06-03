@@ -2,7 +2,7 @@
 
 using System.Dynamic;
 
-namespace ChatTcp.Cli.ConsoleUi;
+namespace ChatTcp.Cli.Shell;
 
 internal static class ShellSettings
 {

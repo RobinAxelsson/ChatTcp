@@ -1,4 +1,4 @@
-﻿namespace ChatTcp.Cli.ConsoleUi;
+﻿namespace ChatTcp.Cli.Shell.Models;
 
 public record ChatMessage
 {

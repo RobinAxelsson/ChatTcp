@@ -1,52 +1,41 @@
-﻿using ChatTcp.Cli.ConsoleUi;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Reactive.Linq;
+using ChatTcp.Cli.Networking;
+using ChatTcp.Cli.Shell;
+using ChatTcp.Cli.Shell.Components;
+using ChatTcp.Cli.Shell.Models;
 namespace ChatTcp.Cli;
 
 internal class Program
 {
     private static async Task Main(string[] args)
     {
-        //using var chatClient = new ChatClient();
-        //var connectTask = chatClient.ConnectAsync(source.Token);
-
-        //while (true)
-        //{
-        //    var input = Console.ReadLine();
-        //    if (input == "cancel")
-        //    {
-        //        source.Cancel();
-        //        break;
-        //    }
-
-        //    if (!string.IsNullOrEmpty(input))
-        //    {
-        //        await chatClient.SendMessage(input);
-        //    }
-        //}
-
-        //await connectTask;
-        var renderer = new Renderer();
-        var appState = new AppState();
-        using var keyHandler = new KeyHandler();
         using var cts = new CancellationTokenSource();
-        var appEventHandler = new AppEventHandler(appState, cts);
 
-        Seed(appState);
+        using var transport = new NetworkTransport();
+        await transport.ConnectAsync("localhost", 8888);
 
-        var keyPressEvents = KeyBinder.BindKeysToEvents(keyHandler.KeyStream);
-        keyPressEvents.Subscribe(appEventHandler.Handle);
+        using var console = new ConsoleEventSource();
+        var network = new NetworkEventSource(transport);
+        var renderer = new Renderer();
 
-        var keyHandlerTask = keyHandler.Start(cts.Token);
-        var renderTask = renderer.Start(appState, cts.Token);
-        var firstTask = await Task.WhenAny(renderTask, keyHandlerTask);
+        var mergedEvents = Observable.Merge(console.Events, network.Events);
 
-        if (firstTask.IsFaulted)
+        mergedEvents.Subscribe(renderer.Handle);
+
+        var renderer = new Renderer(stateStream);
+        var client = new NetworkClient(transport, stateStream);
+
+        Console.CancelKeyPress += (_, _) => cts.Cancel();
+
+        var tasks = new[]
         {
-            Console.WriteLine("Task faulted...");
-            cts.Cancel();
-        }
-        await Task.WhenAll(keyHandlerTask, renderTask); //Exceptions are caught and printed to console
-        Console.WriteLine("Exited gracefully");
-        Console.ReadKey();
+            console.Start(cts.Token),
+            network.ConnectAsync(cts.Token)
+        };
+
+        Console.CancelKeyPress += (_, _) => cts.Cancel();
+        await Task.WhenAll(tasks);
     }
 
     private static void Seed(AppState appState)
@@ -56,4 +45,3 @@ internal class Program
         appState.InputBuffer = "Morning boys!";
     }
 }
-

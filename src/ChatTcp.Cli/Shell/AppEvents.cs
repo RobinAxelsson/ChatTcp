@@ -1,6 +1,6 @@
-﻿using ChatTcp.Cli.ConsoleUi;
+﻿using ChatTcp.Cli.Shell.Models;
 
-namespace ChatTcp.Cli;
+namespace ChatTcp.Cli.Shell;
 
 internal abstract class AppEvent { }
 
@@ -13,10 +13,12 @@ internal class CharInputEvent : AppEvent
         Character = character;
     }
 }
+internal class ConnectedEvent : AppEvent;
+internal class DisconnectedEvent : AppEvent;
 
-internal class ReceiveMessageEvent : AppEvent
+internal class MessageReceivedEvent : AppEvent
 {
-    public ReceiveMessageEvent(ChatMessage chatMessage)
+    public MessageReceivedEvent(ChatMessage chatMessage)
     {
         ChatMessage = chatMessage;
     }
@@ -29,3 +31,15 @@ internal class BackspaceEvent : AppEvent { }
 internal class SendMessageEvent : AppEvent { }
 
 internal class QuitEvent : AppEvent { }
+
+internal class WindowResizedEvent : AppEvent
+{
+    public int Width { get; }
+    public int Height { get; }
+
+    public WindowResizedEvent(int width, int height)
+    {
+        Width = width;
+        Height = height;
+    }
+}

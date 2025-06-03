@@ -1,5 +1,7 @@
-﻿namespace ChatTcp.Cli.ConsoleUi;
-internal class AppState
+﻿using ChatTcp.Cli.Shell.Models;
+
+namespace ChatTcp.Cli.Shell;
+internal record AppState
 {
     private int? _cursorIndex;
     public List<ChatMessage> Messages { get; } = new();

@@ -1,14 +1,18 @@
 ﻿// Licensed to the .NET Foundation under one or more agreements.
 // The .NET Foundation licenses this file to you under the MIT license.
 
-using ChatTcp.Cli.ConsoleUi;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
+using ChatTcp.Cli.Shell.Models;
 
-namespace ChatTcp.Cli;
+namespace ChatTcp.Cli.Shell;
 
 internal class AppEventHandler
 {
+    private readonly Subject<AppState> _appStateStream = new();
     private readonly AppState _appState;
     private readonly CancellationTokenSource _cts;
+    public IObservable<AppState> Events => _appStateStream.AsObservable();
 
     public AppEventHandler(AppState appState, CancellationTokenSource cts)
     {
@@ -28,6 +32,7 @@ internal class AppEventHandler
             case CharInputEvent textEvent:
                 _appState.InputBuffer += textEvent.Character;
                 _appState.CursorIndex++;
+                _appStateStream.OnNext(_appState);
                 break;
 
             case SendMessageEvent:
@@ -36,6 +41,7 @@ internal class AppEventHandler
                     _appState.Messages.Add(ChatMessage.FromCurrentUser(_appState.InputBuffer));
                     _appState.InputBuffer = "";
                     _appState.CursorIndex = 0;
+                    _appStateStream.OnNext(_appState);
                 }
                 break;
 
@@ -45,10 +51,12 @@ internal class AppEventHandler
                     _appState.InputBuffer = _appState.InputBuffer[..^1];
                     _appState.CursorIndex--;
                 }
+                _appStateStream.OnNext(_appState);
                 break;
 
-            case ReceiveMessageEvent receiveMessageEvent:
+            case MessageReceivedEvent receiveMessageEvent:
                 _appState.Messages.Add(receiveMessageEvent.ChatMessage);
+                _appStateStream.OnNext(_appState);
                 break;
 
             case QuitEvent:
@@ -56,8 +64,7 @@ internal class AppEventHandler
                 break;
 
             default:
-                Console.WriteLine("Unknown event received.");
-                break;
+                throw new ArgumentException("Unknown app event");
         }
     }
 }
