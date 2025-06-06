@@ -4,33 +4,34 @@ namespace ChatTcp.Cli.Shell.View;
 
 internal class ChatWindow
 {
-    public ChatWindow(int x1, int y1, int x2, int y2)
+    public ChatWindow(int x0, int y0, int x1, int y1)
     {
+        if (x0 > x1)
+            throw new ShellException($"x0: {x0} can not be bigger than x1: {x1}");
+
+        if (y0 > y1)
+            throw new ShellException($"y0: {y0} can not be bigger than y1: {y1}");
+
+        X0 = x0;
+        Y0 = y0;
         X1 = x1;
         Y1 = y1;
-        X2 = x2;
-        Y2 = y2;
-
-        if (x1 > x2)
-            throw new ShellException($"x1: {x1} can not be bigger then x2: {x2}");
-
-        if (y1 > y2)
-            throw new ShellException($"y1: {y1} can not be bigger then y2: {y2}");
     }
 
+
+    public int X0 { get; set; }
+    public int Y0 { get; set; }
     public int X1 { get; set; }
     public int Y1 { get; set; }
-    public int X2 { get; set; }
-    public int Y2 { get; set; }
 
     public Drawable[] GetDrawables(IEnumerable<ChatMessage> chatMessages)
     {
         if (chatMessages == null || !chatMessages.Any())
             return [];
 
-        int y = Y1;
-        var textElements = new List<ChatBubble>();
-        int chatWidth = X2 - X1;
+        int y = Y0;
+        var textElements = new List<TextElement>();
+        int chatWidth = X1 - X0;
         int elementWidth = chatWidth - chatWidth / 4;
         bool isGroupChat = chatMessages.DistinctBy(x => x.SenderName).Count() > 2;
 
@@ -39,7 +40,8 @@ internal class ChatWindow
         {
             bool sameSenderAsLastMessage = lastMessage != null && chatMessage.SenderName == lastMessage.SenderName;
 
-            if (lastMessage != null && !sameSenderAsLastMessage)
+            //Add linespacing between messages on the left
+            if (chatMessage.SenderType != SenderType.CurrentUser && lastMessage != null && !sameSenderAsLastMessage)
                 y++;
             
             bool useNamePrefix = true;
@@ -51,10 +53,10 @@ internal class ChatWindow
 
             string text = $"{(useNamePrefix ? $"{chatMessage.SenderName}: ": "")}{chatMessage.Content}";
 
-            var textElement = new ChatBubble(text, elementWidth);
+            var textElement = new TextElement(text, elementWidth);
 
             textElement.Y = y;
-            textElement.X = X1;
+            textElement.X = X0;
 
             if(chatMessage.SenderType == SenderType.CurrentUser)
             {
@@ -72,9 +74,9 @@ internal class ChatWindow
         var yMax = textElements.Select(e => e.Y).Max();
 
         //chat overflow move to the latest chats
-        if(yMax > Y2)
+        if(yMax > Y1)
         {
-            int diff = yMax - Y2;
+            int diff = yMax - Y1;
             
             textElements.ForEach(e => e.Y -= diff);
         }

@@ -1,6 +1,6 @@
 ﻿namespace ChatTcp.Cli.Shell.View;
 
-internal class ChatBubble
+internal class TextElement
 {
     public int X { get; set; }
     public int Y { get; set; }
@@ -9,7 +9,7 @@ internal class ChatBubble
     private int _maxWidth;
     public int Width => CalculateWidth();
     public int Height => CalculateHeight();
-    public ChatBubble(string text, int maxWidth)
+    public TextElement(string text, int maxWidth)
     {
         _text = text;
         _maxWidth = maxWidth;

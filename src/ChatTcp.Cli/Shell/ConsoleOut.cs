@@ -9,14 +9,14 @@ internal class ConsoleOut
 
     private int _windowWidth;
     private int _windowHeight;
-    public void Render(AppState appState)
+    public void Handle(AppState appState)
     {
         bool isDefault = _windowHeight == default || _windowWidth == default;
         bool newSize = (_windowHeight != appState.WindowHeight || _windowWidth != appState.WindowWidth);
 
         if (_chatWindow != null && newSize)
         {
-            //clear area
+            _display.ClearArea(_chatWindow.X0, _chatWindow.Y0, _chatWindow.X1, _chatWindow.Y1);
         }
 
         if (_chatWindow == null)
@@ -25,8 +25,8 @@ internal class ConsoleOut
         }
         else
         {
-            _chatWindow.X2 = appState.WindowWidth;
-            _chatWindow.Y2 = appState.WindowHeight;
+            _chatWindow.X1 = appState.WindowWidth;
+            _chatWindow.Y1 = appState.WindowHeight;
         }
 
         var drawables = _chatWindow.GetDrawables(appState.Messages);

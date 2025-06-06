@@ -16,7 +16,7 @@ public record ChatMessage
 
     public static ChatMessage FromServer(string content)
     {
-        return new ChatMessage("", content, SenderType.Server);
+        return new ChatMessage("Server", content, SenderType.Server);
     }
 
     public static ChatMessage FromOtherUser(string name, string content)
