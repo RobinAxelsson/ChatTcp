@@ -1,6 +1,5 @@
 ﻿using System.Reactive.Linq;
 using ChatTcp.Cli.Shell;
-using ChatTcp.Cli.Shell.Models;
 namespace ChatTcp.Cli;
 
 internal class Program
@@ -9,15 +8,16 @@ internal class Program
     {
         using var cts = new CancellationTokenSource();
 
-        using var userInputManager = new UserInputManager();
+        using var userInputManager = new ConsoleInput();
         using var networkManager = new NetworkManager();
         var éventStream = Observable.Merge(userInputManager.Events, networkManager.Events);
 
-        var appEventHandler = new AppEventHandler(cts, networkManager.SendChatMessage);
+        var appEventHandler = new AppEventHandler(cts);
         éventStream.Subscribe(appEventHandler.Handle);
 
-        var renderer = new Renderer();
+        var renderer = new ConsoleOut();
         appEventHandler.AppStateStream.Subscribe(renderer.Render);
+        appEventHandler.ChatMessageStream.Subscribe(networkManager.QueueChatMessage);
 
         var tasks = new[]
         {

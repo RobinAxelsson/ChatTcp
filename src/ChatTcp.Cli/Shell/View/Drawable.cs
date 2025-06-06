@@ -1,4 +1,4 @@
-﻿namespace ChatTcp.Cli.Shell.Components;
+﻿namespace ChatTcp.Cli.Shell.View;
 
 public struct Drawable
 {

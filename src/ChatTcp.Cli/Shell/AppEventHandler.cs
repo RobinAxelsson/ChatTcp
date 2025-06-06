@@ -12,15 +12,15 @@ internal class AppEventHandler
 {
     private AppState _lastAppState = new();
     private readonly Subject<AppState> _appStateStream = new();
+    private readonly Subject<ChatMessage> _chatMessageStream = new();
     private readonly CancellationTokenSource _cts;
-    private readonly Func<ChatMessage, Task> _sendChatMessage;
     private List<ChatMessage> _chatMessages = new();
     public IObservable<AppState> AppStateStream => _appStateStream.AsObservable();
+    public IObservable<ChatMessage> ChatMessageStream => _chatMessageStream.AsObservable();
 
-    public AppEventHandler(CancellationTokenSource cts, Func<ChatMessage, Task> sendChatMessage)
+    public AppEventHandler(CancellationTokenSource cts)
     {
         _cts = cts;
-        _sendChatMessage = sendChatMessage;
     }
 
     public void Handle(AppEvent? appEvent)
@@ -62,7 +62,8 @@ internal class AppEventHandler
                         CursorIndex = 0
                     };
 
-                    _sendChatMessage(newChatMessage);
+                    _chatMessageStream.OnNext(newChatMessage);
+
                 }
                 break;
 

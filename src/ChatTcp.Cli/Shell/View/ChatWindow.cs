@@ -1,6 +1,6 @@
 ﻿using ChatTcp.Cli.Shell.Models;
 
-namespace ChatTcp.Cli.Shell.Components;
+namespace ChatTcp.Cli.Shell.View;
 
 internal class ChatWindow
 {
@@ -23,8 +23,11 @@ internal class ChatWindow
     public int X2 { get; set; }
     public int Y2 { get; set; }
 
-    public Drawable[] GetDrawables(List<ChatMessage> chatMessages)
+    public Drawable[] GetDrawables(IEnumerable<ChatMessage> chatMessages)
     {
+        if (chatMessages == null || !chatMessages.Any())
+            return [];
+
         int y = Y1;
         var textElements = new List<ChatBubble>();
         int chatWidth = X2 - X1;
