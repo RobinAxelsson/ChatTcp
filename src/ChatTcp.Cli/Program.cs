@@ -8,14 +8,15 @@ internal class Program
 {
     private static async Task Main(string[] args)
     {
-        var display = new Display(150, 100);
-        var chatWindow = new ChatWindow(0, 0, 100, 20);
+        var display = new Display(150, 20);
+        var chatWindow = new ChatWindow(0, 0, 100, 5);
         var drawables = chatWindow.GetDrawables([
-            ChatMessage.FromServer("Hello"),
-            ChatMessage.FromOtherUser("Karl", "hello"),
-            ChatMessage.FromCurrentUser("helljjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjnkjnkjnkjnkjnkjnkkjnjnjknnjo!"),
-            ChatMessage.FromCurrentUser("helljjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjnkjnkjnkjnkjnkjnkkjnjnjknnjo!"),
-            ChatMessage.FromOtherUser("Karl", "hello"),
+            ChatMessage.FromServer("0"),
+            ChatMessage.FromServer("1"),
+            ChatMessage.FromOtherUser("Karl", "4"),
+            ChatMessage.FromCurrentUser("4"),
+            ChatMessage.FromCurrentUser("5"),
+            ChatMessage.FromCurrentUser("6"),
             ChatMessage.FromCurrentUser("helljjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjnkjnkjnkjnkjnkjnkkjnjnjknnjo!"),
             ]);
         display.Add(drawables);

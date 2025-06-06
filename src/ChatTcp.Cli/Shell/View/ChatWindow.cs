@@ -71,19 +71,19 @@ internal class ChatWindow
             lastMessage = chatMessage;
         }
 
-        var yMax = textElements.Select(e => e.Y).Max();
+        var drawables = textElements.SelectMany(x => x.GetDrawables()).ToArray();
+        int maxY = drawables.Max(x => x.Y);
+        int diff = Y1 - maxY;
 
-        //chat overflow move to the latest chats
-        if(yMax > Y1)
+        if (diff < 0)
         {
-            int diff = yMax - Y1;
-            
-            textElements.ForEach(e => e.Y -= diff);
+            for (int i = 0; i < drawables.Length; i++)
+            {
+                drawables[i].Y += diff; //+-
+            }
         }
 
-        var posetiveElements = textElements.Where(x => x.Y > -1).ToList();
-
-        var drawables = textElements.SelectMany(x => x.GetDrawables()).Where(d => d.Y > -1).ToArray();
+        drawables = [.. drawables.Where(x => x.Y > -1)];
 
         return drawables;
     }
