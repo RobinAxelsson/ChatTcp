@@ -3,7 +3,7 @@ using System.Reactive.Subjects;
 
 namespace ChatTcp.Cli.Shell;
 
-internal sealed class ConsoleInput : IDisposable
+internal sealed class ConsoleInputManager : IDisposable
 {
     private readonly Subject<AppEvent> _eventStream = new();
 

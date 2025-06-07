@@ -8,9 +8,9 @@ using ChatTcp.Cli.Shell.Models;
 
 namespace ChatTcp.Cli.Shell;
 
-internal class AppEventTranslator
+internal class AppEventHandler
 {
-    private AppState _lastAppState = new();
+    private AppState _lastAppState = AppState.Debug;
     private readonly Subject<AppState> _appStateStream = new();
     private readonly Subject<ChatMessage> _chatMessageStream = new();
     private readonly CancellationTokenSource _cts;
@@ -18,7 +18,7 @@ internal class AppEventTranslator
     public IObservable<AppState> AppStateStream => _appStateStream.AsObservable();
     public IObservable<ChatMessage> ChatMessageStream => _chatMessageStream.AsObservable();
 
-    public AppEventTranslator(CancellationTokenSource cts)
+    public AppEventHandler(CancellationTokenSource cts)
     {
         _cts = cts;
     }
@@ -34,8 +34,8 @@ internal class AppEventTranslator
 
         switch (appEvent)
         {
-            case ConsoleStartupEvent cse:
-                appState = _lastAppState with { WindowHeight = cse.WindowHeight, WindowWidth = cse.WindowWidth };
+            case ConsoleStartupEvent consoleStartupEvent:
+                appState = _lastAppState with { WindowHeight = consoleStartupEvent.WindowHeight, WindowWidth = consoleStartupEvent.WindowWidth };
                 break;
 
             case WindowResizedEvent windowResized:
@@ -59,7 +59,7 @@ internal class AppEventTranslator
                     {
                         Messages = _chatMessages,
                         InputBuffer = "",
-                        CursorIndex = 0
+                        CursorIndex = -1
                     };
 
                     _chatMessageStream.OnNext(newChatMessage);

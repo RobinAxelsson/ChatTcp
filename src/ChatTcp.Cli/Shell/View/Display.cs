@@ -36,37 +36,6 @@ internal sealed class Display
         _next = new char[_width, _height];
     }
 
-    public void ClearArea(int x0, int y0, int x1, int y1)
-    {
-        if (x0 < 1 || y0 < 1 || x0 > x1 || y0 > y1 || x1 >= Width || y1 >= Height)
-        {
-            string message = $"Invalid coordinates: x0={x0}, y0={y0}, x1={x1}, y1={y1}, " +
-                             $"bounds=({Width}, {Height})";
-
-            throw new ShellException(message);
-        }
-
-
-        for (int y = y0; y <= y1; y++)
-        {
-            for (int x = x0; x <= x1; x++)
-            {
-                _next[x, y] = '\0';
-            }
-        }
-    }
-
-
-    public void Clear(IEnumerable<Drawable> drawables)
-    {
-        ValidateOverflow(drawables);
-
-        foreach (var d in drawables)
-        {
-            _next[d.X, d.Y] = '\0';
-        }
-    }
-
     public void Add(IEnumerable<Drawable> drawables)
     {
         ValidateOverflow(drawables);
@@ -122,6 +91,7 @@ internal sealed class Display
                     }
 
                     _drawn[x, y] = next;
+                    _next[x, y] = '\0';
                 }
             }
         }

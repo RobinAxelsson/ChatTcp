@@ -23,9 +23,9 @@ internal class PromptArea
     public int X1 { get; set; }
     public int Y1 { get; set; }
 
-    public Drawable[] GetDrawables(string prompt, int cursorIndex)
+    public Drawable[] GetDrawables(string prompt)
     {
-        var text = ShellSettings.Prompt + prompt + ' '; //Extra for cursor
+        var text = ShellSettings.Prompt + prompt;
 
         int y = Y0;
         int width = X1 - X0;
