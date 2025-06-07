@@ -6,11 +6,11 @@ internal class ChatWindow
 {
     public ChatWindow(int x0, int y0, int x1, int y1)
     {
-        if (x0 > x1)
-            throw new ShellException($"x0: {x0} can not be bigger than x1: {x1}");
+        if (x0 >= x1)
+            throw new ShellException($"x0: {x0} can not be bigger then or equal to x1: {x1}");
 
-        if (y0 > y1)
-            throw new ShellException($"y0: {y0} can not be bigger than y1: {y1}");
+        if (y0 >= y1)
+            throw new ShellException($"y0: {y0} can not be bigger then or equal to y1: {y1}");
 
         X0 = x0;
         Y0 = y0;
@@ -41,7 +41,7 @@ internal class ChatWindow
             bool sameSenderAsLastMessage = lastMessage != null && chatMessage.SenderName == lastMessage.SenderName;
 
             //Add linespacing between messages on the left
-            if (chatMessage.SenderType != SenderType.CurrentUser && lastMessage != null && !sameSenderAsLastMessage)
+            if (lastMessage != null && !sameSenderAsLastMessage)
                 y++;
             
             bool useNamePrefix = true;

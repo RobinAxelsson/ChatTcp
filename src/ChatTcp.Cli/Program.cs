@@ -1,4 +1,5 @@
-﻿using System.Reactive.Linq;
+﻿using System.Drawing;
+using System.Reactive.Linq;
 using ChatTcp.Cli.Shell;
 using ChatTcp.Cli.Shell.Models;
 using ChatTcp.Cli.Shell.View;
@@ -8,20 +9,24 @@ internal class Program
 {
     private static async Task Main(string[] args)
     {
-        var display = new Display(150, 20);
-        var chatWindow = new ChatWindow(0, 0, 100, 5);
-        var drawables = chatWindow.GetDrawables([
-            ChatMessage.FromServer("0"),
-            ChatMessage.FromServer("1"),
-            ChatMessage.FromOtherUser("Karl", "4"),
-            ChatMessage.FromCurrentUser("4"),
-            ChatMessage.FromCurrentUser("5"),
-            ChatMessage.FromCurrentUser("6"),
-            ChatMessage.FromCurrentUser("helljjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjnkjnkjnkjnkjnkjnkkjnjnjknnjo!"),
-            ]);
-        display.Add(drawables);
-        display.Render();
+        var consoleOut = new ConsoleOut();
 
+        var appState = new AppState()
+        {
+            Messages = [
+            ChatMessage.FromServer("You are connected"),
+            ChatMessage.FromServer("Have fun"),
+            ChatMessage.FromOtherUser("Karl", "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus interdum ex sit amet augue maximus, a rhoncus magna cursus. Pellentesque et turpis sit amet quam sagittis accumsan. In id sem ornare, ornare ligula et, iaculis eros. Aenean dignissim elit non magna lobortis, at iaculis ex lacinia. Sed a diam nec nisl mollis dignissim sed ut purus. Nunc sit amet ipsum suscipit, consectetur mauris vel, posuere augue. Sed at est non nulla tincidunt vehicula. Nullam molestie gravida arcu. Vivamus pellentesque neque at purus consequat, sed commodo magna maximus."),
+            ChatMessage.FromCurrentUser("Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus interdum ex sit amet augue maximus, a rhoncus magna cursus. Pellentesque et turpis sit amet quam sagittis accumsan. In id sem ornare, ornare ligula et, iaculis eros. Aenean dignissim elit non magna lobortis, at iaculis ex lacinia. Sed a diam nec nisl mollis dignissim sed ut purus. Nunc sit amet ipsum suscipit, consectetur mauris vel, posuere augue. Sed at est non nulla tincidunt vehicula. Nullam molestie gravida arcu. Vivamus pellentesque neque at purus consequat, sed commodo magna maximus."),
+            ChatMessage.FromOtherUser("Liza", "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Phasellus interdum ex sit amet augue maximus, a rhoncus magna cursus. Pellentesque et turpis sit amet quam sagittis accumsan. In id sem ornare, ornare ligula et, iaculis eros. Aenean dignissim elit non magna lobortis, at iaculis ex lacinia. Sed a diam nec nisl mollis dignissim sed ut purus. Nunc sit amet ipsum suscipit, consectetur mauris vel, posuere augue. Sed at est non nulla tincidunt vehicula. Nullam molestie gravida arcu. Vivamus pellentesque neque at purus consequat, sed commodo magna maximus."),
+            ],
+            CursorIndex = -1,
+            InputBuffer = "Hello world",
+            WindowHeight = 20,
+            WindowWidth = 100,
+        };
+
+        consoleOut.Handle(appState);
         Console.ReadKey();
         
         //using var cts = new CancellationTokenSource();

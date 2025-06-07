@@ -1,4 +1,5 @@
-﻿using ChatTcp.Cli.Shell.Models;
+﻿
+using ChatTcp.Cli.Shell.Models;
 
 namespace ChatTcp.Cli.Shell;
 internal record AppState

@@ -62,7 +62,7 @@ internal class TextElement
         return height;
     }
 
-    public List<Drawable> GetDrawables()
+    public Drawable[] GetDrawables()
     {
         var drawables = new List<Drawable>();
 
@@ -106,6 +106,6 @@ internal class TextElement
             lineIndex++;
         }
 
-        return drawables;
+        return drawables.ToArray();
     }
 }

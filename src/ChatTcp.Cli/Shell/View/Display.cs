@@ -4,8 +4,29 @@ internal sealed class Display
 {
     private char [,] _drawn;
     private char [,] _next;
-    private readonly int _width;
-    private readonly int _height;
+    private int _width;
+    private int _height;
+
+    public int Height
+    {
+        get => _height;
+        set
+        {
+            _height = value;
+        }
+    }
+
+    public int Width
+    {
+        get
+        {
+            return _width;
+        }
+        set
+        {
+            _width = value;
+        }
+    }
 
     public Display(int width, int height)
     {
@@ -17,10 +38,10 @@ internal sealed class Display
 
     public void ClearArea(int x0, int y0, int x1, int y1)
     {
-        if (x0 < 1 || y0 < 1 || x0 > x1 || y0 > y1 || x1 >= _width || y1 >= _height)
+        if (x0 < 1 || y0 < 1 || x0 > x1 || y0 > y1 || x1 >= Width || y1 >= Height)
         {
             string message = $"Invalid coordinates: x0={x0}, y0={y0}, x1={x1}, y1={y1}, " +
-                             $"bounds=({_width}, {_height})";
+                             $"bounds=({Width}, {Height})";
 
             throw new ShellException(message);
         }
@@ -58,8 +79,8 @@ internal sealed class Display
 
     private void ValidateOverflow(IEnumerable<Drawable> drawables)
     {
-        bool isOverflowX = drawables.Any(d => d.X >= _width);
-        bool isOverflowY = drawables.Any(d => d.Y >= _height);
+        bool isOverflowX = drawables.Any(d => d.X >= Width);
+        bool isOverflowY = drawables.Any(d => d.Y >= Height);
 
         if (isOverflowX || isOverflowY)
         {
@@ -73,7 +94,7 @@ internal sealed class Display
                 .ToArray());
 
             throw new ShellException(
-                $"Display too small. Width: {_width}, Height: {_height}, " +
+                $"Display too small. Width: {Width}, Height: {Height}, " +
                 $"drawable MaxX: {maxX}, drawable MaxY: {maxY}, " +
                 $"Overflow drawables: '{overflowChars}'");
         }
@@ -81,9 +102,9 @@ internal sealed class Display
 
     public void Render()
     {
-        for (int y = 0; y < _height; y++)
+        for (int y = 0; y < Height; y++)
         {
-            for (int x = 0; x < _width; x++)
+            for (int x = 0; x < Width; x++)
             {
                 var drawn = _drawn[x, y];
                 var next = _next[x, y];
