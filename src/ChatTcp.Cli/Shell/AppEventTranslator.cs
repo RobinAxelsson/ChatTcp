@@ -8,7 +8,7 @@ using ChatTcp.Cli.Shell.Models;
 
 namespace ChatTcp.Cli.Shell;
 
-internal class AppEventHandler
+internal class AppEventTranslator
 {
     private AppState _lastAppState = new();
     private readonly Subject<AppState> _appStateStream = new();
@@ -18,7 +18,7 @@ internal class AppEventHandler
     public IObservable<AppState> AppStateStream => _appStateStream.AsObservable();
     public IObservable<ChatMessage> ChatMessageStream => _chatMessageStream.AsObservable();
 
-    public AppEventHandler(CancellationTokenSource cts)
+    public AppEventTranslator(CancellationTokenSource cts)
     {
         _cts = cts;
     }

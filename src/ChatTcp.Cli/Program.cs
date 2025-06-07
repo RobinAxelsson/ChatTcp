@@ -9,7 +9,7 @@ internal class Program
 {
     private static async Task Main(string[] args)
     {
-        var consoleOut = new ConsoleOut();
+        var consoleOut = new ConsoleOutput();
 
         var appState = new AppState()
         {
@@ -22,12 +22,16 @@ internal class Program
             ],
             CursorIndex = -1,
             InputBuffer = "Hello world",
-            WindowHeight = 20,
-            WindowWidth = 100,
+            WindowHeight = Console.WindowHeight,
+            WindowWidth = Console.WindowWidth,
         };
 
         consoleOut.Handle(appState);
-        Console.ReadKey();
+
+        while (true)
+        {
+            Console.Read();
+        }
         
         //using var cts = new CancellationTokenSource();
 
@@ -35,10 +39,10 @@ internal class Program
         //using var networkManager = new NetworkManager();
         //var éventStream = Observable.Merge(userInputManager.Events, networkManager.Events);
 
-        //var appEventHandler = new AppEventHandler(cts);
+        //var appEventHandler = new AppEventTranslator(cts);
         //éventStream.Subscribe(appEventHandler.Handle);
 
-        //var renderer = new ConsoleOut();
+        //var renderer = new ConsoleOutput();
         //appEventHandler.AppStateStream.Subscribe(renderer.Handle);
         //appEventHandler.ChatMessageStream.Subscribe(networkManager.QueueChatMessage);
 

@@ -2,9 +2,9 @@
 
 namespace ChatTcp.Cli.Shell.View;
 
-internal class ChatWindow
+internal class ChatArea
 {
-    public ChatWindow(int x0, int y0, int x1, int y1)
+    public ChatArea(int x0, int y0, int x1, int y1)
     {
         if (x0 >= x1)
             throw new ShellException($"x0: {x0} can not be bigger then or equal to x1: {x1}");
@@ -43,22 +43,22 @@ internal class ChatWindow
             //Add linespacing between messages on the left
             if (lastMessage != null && !sameSenderAsLastMessage)
                 y++;
-            
+
             bool useNamePrefix = true;
 
-            if(chatMessage.SenderType == SenderType.CurrentUser || sameSenderAsLastMessage || !isGroupChat)
+            if (chatMessage.SenderType == SenderType.CurrentUser || sameSenderAsLastMessage || !isGroupChat)
             {
                 useNamePrefix = false;
             }
 
-            string text = $"{(useNamePrefix ? $"{chatMessage.SenderName}: ": "")}{chatMessage.Content}";
+            string text = $"{(useNamePrefix ? $"{chatMessage.SenderName}: " : "")}{chatMessage.Content}";
 
             var textElement = new TextElement(text, elementWidth);
 
             textElement.Y = y;
             textElement.X = X0;
 
-            if(chatMessage.SenderType == SenderType.CurrentUser)
+            if (chatMessage.SenderType == SenderType.CurrentUser)
             {
                 var width = textElement.Width;
                 textElement.X = chatWidth - width;
