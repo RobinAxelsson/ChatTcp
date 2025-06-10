@@ -51,6 +51,14 @@ internal sealed class ConsoleInputManager : IDisposable
         if (key.Key == ConsoleKey.Backspace) return new BackspaceEvent();
         if (key.Key == ConsoleKey.Enter) return new PressEnterEvent();
         if (key.Key == ConsoleKey.Escape) return new PressEscapeEvent();
+        if (key.Key == ConsoleKey.Z)
+        {
+            Console.CursorTop++;
+        }
+        if (key.Key == ConsoleKey.M)
+        {
+            Console.WindowTop++;
+        }
 
         var modifiers = key.Modifiers;
 

@@ -1,4 +1,6 @@
-﻿namespace ChatTcp.Cli.Shell.View;
+﻿using static System.Net.Mime.MediaTypeNames;
+
+namespace ChatTcp.Cli.Shell.View;
 
 internal sealed class Display
 {
@@ -43,6 +45,20 @@ internal sealed class Display
         foreach (var d in drawables)
         {
             _next[d.X, d.Y] = d.C;
+        }
+    }
+
+    public void ClearArea(int x0, int y0, int x1, int y1)
+    {
+        for (int y = y0; y < y1; y++)
+        {
+            for (int x = x0; x < x1; x++)
+            {
+                Console.SetCursorPosition(x, y);
+                Console.Write(' ');
+                _drawn[x, y] = '\0';
+                _next[x, y] = '\0';
+            }
         }
     }
 

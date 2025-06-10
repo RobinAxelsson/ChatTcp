@@ -16,7 +16,7 @@ internal class Program
         éventStream.Subscribe(appEventHandler.Handle);
 
         var consoleOutputManager = new ConsoleOutputManager();
-        appEventHandler.AppStateStream.Subscribe(consoleOutputManager.Handle);
+        //appEventHandler.AppStateStream.Subscribe(consoleOutputManager.Handle);
         appEventHandler.ChatMessageStream.Subscribe(networkManager.QueueChatMessage);
 
         var tasks = new[]

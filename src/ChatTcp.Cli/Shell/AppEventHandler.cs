@@ -21,6 +21,7 @@ internal class AppEventHandler
     public AppEventHandler(CancellationTokenSource cts)
     {
         _cts = cts;
+        _chatMessages = [.. AppState.Debug.Messages];
     }
 
     public void Handle(AppEvent? appEvent)
