@@ -1,22 +1,19 @@
-﻿using System.Dynamic;
-using System.Reactive.Linq;
-using ChatTcp.Cli.Shell;
+﻿using System.Reactive.Linq;
 using ChatTcp.Cli.Shell.View;
 namespace ChatTcp.Cli;
 
-internal class Program
+internal class ConsoleChat
 {
-    private static async Task Main(string[] args)
-    {
-        using var cts = new CancellationTokenSource();
-        var token = cts.Token;
-        var consoleIn = new List<Drawable>();
-        int promptRow = 5;
-        int nextChat = 0;
-        const string start = "Chat>";
+    private List<Drawable> _prompt = new();
+    private int _promptRow = 10;
+    private int _nextChat = 0;
+    private const string PROMPT_PREFIX = "Chat>";
+    private const int PROMPT_JUMP = 5;
 
-        Console.SetCursorPosition(0, promptRow);
-        Console.Write(start);
+    public void Activate(CancellationToken token)
+    {
+        Console.SetCursorPosition(0, _promptRow);
+        Console.Write(PROMPT_PREFIX);
 
         while (!token.IsCancellationRequested)
         {
@@ -25,74 +22,178 @@ internal class Program
                 var key = Console.ReadKey(true);
                 if (key.Modifiers == ConsoleModifiers.Control && key.Key == ConsoleKey.Enter)
                 {
-                    if (!consoleIn.Any() || consoleIn.All(x => char.IsWhiteSpace(x.C)))
+                    if (!_prompt.Any() || _prompt.All(x => char.IsWhiteSpace(x.C)))
                     {
                         continue;
                     }
 
-                    Console.SetCursorPosition(0, nextChat);
-                    Console.Write(string.Concat(consoleIn.Select(x => x.C)));
-                    //Console.Write("Send message:" + string.Concat(consoleIn.Select(x => x.C)));
-
-                    nextChat++;
-
-                    if(nextChat >= promptRow)
+                    //erase prompt_prefix
+                    Console.SetCursorPosition(0, _promptRow);
+                    for (int i = 0; i < PROMPT_PREFIX.Length; i++)
                     {
-                        promptRow = nextChat;
-                        Thread.Sleep(200);
-                        Console.SetCursorPosition(0, promptRow);
-                        Console.Write(start);
-                        consoleIn.Clear();
-                        continue;
+                        Console.Write(" ");
                     }
 
-                    Thread.Sleep(100);
-                    Console.SetCursorPosition(start.Length, promptRow);
-
-                    foreach (var d in consoleIn)
+                    //erase prompt
+                    foreach (var d in _prompt)
                     {
-                        Console.SetCursorPosition(d.X - 1, d.Y);
+                        int x = d.X == 0 ? 0 : d.X - 1;
+                        Console.SetCursorPosition(x, d.Y);
                         Console.Write(' ');
                     }
 
-                    Console.SetCursorPosition(start.Length, promptRow);
-                    consoleIn.Clear();
+                    //write the prompt in the message row
+                    Console.SetCursorPosition(0, _nextChat);
+                    Console.Write(string.Concat(_prompt.Select(x => x.C)));
 
+                    int chatRows = _prompt.Select(x => x.Y).Distinct().Count();
+                    _nextChat += chatRows;
+
+                    //jump the prompt if messages reach
+                    while(_nextChat >= _promptRow)
+                    {
+                        _promptRow += PROMPT_JUMP;
+                    }
+
+                    Console.SetCursorPosition(0, _promptRow);
+                    Console.Write(PROMPT_PREFIX);
+
+                    _prompt.Clear();
                     continue;
                 }
                 if (key.Key == ConsoleKey.Enter)
                 {
-                    consoleIn.Add(new Drawable(Console.CursorLeft, Console.CursorTop, '\n'));
+                    _prompt.Add(new Drawable(Console.CursorLeft, Console.CursorTop, '\n'));
                     Console.CursorLeft = 0;
                     Console.CursorTop++;
                     continue;
                 }
                 if (key.Key == ConsoleKey.Backspace)
                 {
-                    if (!consoleIn.Any())
+                    if (!_prompt.Any())
                     {
                         continue;
                     }
 
-                    consoleIn.RemoveAt(consoleIn.Count - 1);
+                    _prompt.RemoveAt(_prompt.Count - 1);
 
-                    if (Console.CursorLeft != 0)
+                    bool isFirstPromptRowStart = Console.CursorTop == _promptRow && Console.CursorLeft == PROMPT_PREFIX.Length;
+                    bool isOtherRowStart = Console.CursorTop > _promptRow && Console.CursorLeft == 0;
+
+                    if (!isOtherRowStart && !isFirstPromptRowStart)
                     {
                         Console.CursorLeft--;
                         Console.Write(' ');
                         Console.CursorLeft--;
                     }
-                    else
+
+                    if(isOtherRowStart)
                     {
-                        Console.SetCursorPosition(consoleIn[^1].X, consoleIn[^1].Y);
+                        Console.SetCursorPosition(_prompt[^1].X, _prompt[^1].Y);
                     }
 
                     continue;
                 }
+
                 Console.Write(key.KeyChar);
-                consoleIn.Add(new Drawable(Console.CursorLeft, Console.CursorTop, key.KeyChar));
+                _prompt.Add(new Drawable(Console.CursorLeft, Console.CursorTop, key.KeyChar));
             }
         }
+    }
+}
+
+internal class Program
+{
+    private static async Task Main(string[] args)
+    {
+        var cts = new CancellationTokenSource();
+        var consoleChat = new ConsoleChat();
+        consoleChat.Activate(cts.Token);
+        //using var cts = new CancellationTokenSource();
+        //var token = cts.Token;
+        //var prompt = new List<Drawable>();
+        //int promptRow = 5;
+        //int nextChat = 0;
+        //const string start = "Chat>";
+
+        //Console.SetCursorPosition(0, promptRow);
+        //Console.Write(start);
+
+        //while (!token.IsCancellationRequested)
+        //{
+        //    if (Console.KeyAvailable)
+        //    {
+        //        var key = Console.ReadKey(true);
+        //        if (key.Modifiers == ConsoleModifiers.Control && key.Key == ConsoleKey.Enter)
+        //        {
+        //            if (!prompt.Any() || prompt.All(x => char.IsWhiteSpace(x.C)))
+        //            {
+        //                continue;
+        //            }
+
+        //            Console.SetCursorPosition(0, nextChat);
+        //            Console.Write(string.Concat(prompt.Select(x => x.C)));
+        //            //Console.Write("Send message:" + string.Concat(_prompt.Select(x => x.C)));
+
+        //            nextChat++;
+
+        //            if (nextChat >= promptRow)
+        //            {
+        //                promptRow = nextChat;
+        //                Thread.Sleep(200);
+        //                Console.SetCursorPosition(0, promptRow);
+        //                Console.Write(start);
+        //                prompt.Clear();
+        //                continue;
+        //            }
+
+        //            Thread.Sleep(100);
+        //            Console.SetCursorPosition(start.Length, promptRow);
+
+        //            foreach (var d in prompt)
+        //            {
+        //                Console.SetCursorPosition(d.X - 1, d.Y);
+        //                Console.Write(' ');
+        //            }
+
+        //            Console.SetCursorPosition(start.Length, promptRow);
+        //            prompt.Clear();
+
+        //            continue;
+        //        }
+        //        if (key.Key == ConsoleKey.Enter)
+        //        {
+        //            prompt.Add(new Drawable(Console.CursorLeft, Console.CursorTop, '\n'));
+        //            Console.CursorLeft = 0;
+        //            Console.CursorTop++;
+        //            continue;
+        //        }
+        //        if (key.Key == ConsoleKey.Backspace)
+        //        {
+        //            if (!prompt.Any())
+        //            {
+        //                continue;
+        //            }
+
+        //            prompt.RemoveAt(prompt.Count - 1);
+
+        //            if (Console.CursorLeft != 0)
+        //            {
+        //                Console.CursorLeft--;
+        //                Console.Write(' ');
+        //                Console.CursorLeft--;
+        //            }
+        //            else
+        //            {
+        //                Console.SetCursorPosition(prompt[^1].X, prompt[^1].Y);
+        //            }
+
+        //            continue;
+        //        }
+        //        Console.Write(key.KeyChar);
+        //        prompt.Add(new Drawable(Console.CursorLeft, Console.CursorTop, key.KeyChar));
+        //    }
+        //}
 
         //using var userInputManager = new ConsoleInputManager();
         //using var networkManager = new NetworkManager();
