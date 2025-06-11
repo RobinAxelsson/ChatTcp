@@ -22,7 +22,7 @@ internal sealed class ConsoleInputManager : IDisposable
             {
                 if (Console.KeyAvailable)
                 {
-                    var key = Console.ReadKey(true);
+                    var key = Console.ReadKey(false);
                     var appEvent = MapKeyToEvent(key);
                     if (appEvent != null)
                         _eventStream.OnNext(appEvent);
