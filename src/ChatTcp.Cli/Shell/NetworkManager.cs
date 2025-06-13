@@ -9,9 +9,8 @@ internal sealed class NetworkManager : IDisposable
 {
     private readonly NetworkClient _networkClient = new NetworkClient();
     private readonly Subject<AppEvent> _events = new();
-    private readonly Queue<ChatMessage> _chatMessageQueue = new();
+    private readonly Queue<ChatMessage> _outboundChatMessageQueue = new();
     public IObservable<AppEvent> Events => _events.AsObservable();
-
     public async Task StartAsync(CancellationToken ct)
     {
         await _networkClient.ConnectAsync("localhost", 8888);
@@ -39,7 +38,7 @@ internal sealed class NetworkManager : IDisposable
     {
         while (!ct.IsCancellationRequested)
         {
-            if (_chatMessageQueue.TryDequeue(out var message))
+            if (_outboundChatMessageQueue.TryDequeue(out var message))
             {
                 await _networkClient.SendAsync(message.Content);
             }
@@ -64,9 +63,9 @@ internal sealed class NetworkManager : IDisposable
         }
     }
 
-    public void QueueChatMessage(ChatMessage chatMessage)
+    public void QueueOutboundChatMessage(ChatMessage chatMessage)
     {
-        _chatMessageQueue.Enqueue(chatMessage);
+        _outboundChatMessageQueue.Enqueue(chatMessage);
     }
 
     public void Dispose()

@@ -13,7 +13,7 @@ internal class CharInputEvent : AppEvent
         Chr = character;
     }
 }
-internal class ConnectedEvent : AppEvent;
+internal class ConnectedEvent : AppEvent { }
 internal class DisconnectedEvent : AppEvent;
 
 internal class NetworkReceiveEvent : AppEvent
