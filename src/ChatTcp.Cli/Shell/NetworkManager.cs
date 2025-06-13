@@ -1,6 +1,7 @@
 ﻿using System.Net.Sockets;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
+using System.Runtime.ExceptionServices;
 using System.Text;
 using System.Text.Json;
 using ChatTcp.Cli.Shell.Models;
@@ -17,9 +18,19 @@ internal sealed class NetworkManager : IDisposable
     private StreamWriter? _writer;
 
     public IObservable<AppEvent> Events => _events.AsObservable();
+
+    public void QueueOutboundChatMessage(ChatMessage chatMessage)
+    {
+        _outboundChatMessageQueue.Enqueue(chatMessage);
+    }
+
     public async Task StartAsync(CancellationToken ct)
     {
-        await ConnectAsync("localhost", 8888);
+        await _tcpClient.ConnectAsync("localhost", 8888);
+        _networkStream = _tcpClient.GetStream();
+        _reader = new StreamReader(_networkStream, Encoding.UTF8);
+        _writer = new StreamWriter(_networkStream, Encoding.UTF8) { AutoFlush = true };
+
         _events.OnNext(new ConnectedEvent());
 
         try
@@ -28,7 +39,10 @@ internal sealed class NetworkManager : IDisposable
             var sendTask = SendMessages(ct);
 
             var firstTask = await Task.WhenAny(receiveTask, sendTask);
-            await firstTask;
+            if (firstTask.IsFaulted)
+            {
+                throw firstTask.Exception;
+            }
 
             await Task.WhenAll(receiveTask, sendTask);
         }
@@ -38,24 +52,6 @@ internal sealed class NetworkManager : IDisposable
             _events.OnCompleted();
         }
 
-    }
-
-    private async Task ConnectAsync(string host, int port)
-    {
-        await _tcpClient.ConnectAsync(host, port);
-        _networkStream = _tcpClient.GetStream();
-        _reader = new StreamReader(_networkStream, Encoding.UTF8);
-        _writer = new StreamWriter(_networkStream, Encoding.UTF8) { AutoFlush = true };
-    }
-
-    private async Task<string?> ReadLineAsync(CancellationToken ct)
-    {
-        if (_reader == null)
-        {
-            throw new ShellException("reader is null");
-        }
-        var text = await _reader.ReadLineAsync();
-        return text;
     }
 
     private async Task SendMessages(CancellationToken ct)
@@ -77,7 +73,12 @@ internal sealed class NetworkManager : IDisposable
     {
         while (!ct.IsCancellationRequested)
         {
-            var networkString = await ReadLineAsync(ct);
+            if (_reader == null)
+            {
+                throw new ShellException("reader is null");
+            }
+            var networkString = await _reader.ReadLineAsync();
+
             if (networkString != null)
             {
                 var message = ChatMessage.FromOtherUser("", networkString);
@@ -88,11 +89,6 @@ internal sealed class NetworkManager : IDisposable
                 _events.OnNext(new NetworkReceiveEvent(message));
             }
         }
-    }
-
-    public void QueueOutboundChatMessage(ChatMessage chatMessage)
-    {
-        _outboundChatMessageQueue.Enqueue(chatMessage);
     }
 
     public void Dispose()
