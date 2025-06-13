@@ -28,7 +28,7 @@ internal class ConsoleChat
         _messageQueue.Enqueue(message);
     }
 
-    public async Task Activate(CancellationToken token)
+    public async Task Start(CancellationToken token)
     {
         Console.SetCursorPosition(0, _promptRow);
         Console.Write(PROMPT_PREFIX);
@@ -93,7 +93,7 @@ internal class ConsoleChat
 
                 Console.SetCursorPosition(cursorPosition.Left, cursorPosition.Top + promptDiff);
                 Console.CursorVisible = true;
-                await Task.Delay(200, token);
+                await Task.Delay(200);
             }
             if (Console.KeyAvailable)
             {
@@ -145,7 +145,7 @@ internal class ConsoleChat
 
                     _nextChatRow = chatEnd;
                     _prompt.Clear();
-                    await Task.Delay(500, token);
+                    await Task.Delay(500);
                     continue;
                 }
                 if (key.Key == ConsoleKey.Enter)
@@ -186,5 +186,6 @@ internal class ConsoleChat
                 _prompt.Add(new Drawable(Console.CursorLeft, Console.CursorTop, key.KeyChar));
             }
         }
+        Console.WriteLine(nameof(ConsoleChat) + " exited gracefully");
     }
 }

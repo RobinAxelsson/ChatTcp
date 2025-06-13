@@ -24,7 +24,7 @@ internal sealed class NetworkManager : IDisposable
         _outboundChatMessageQueue.Enqueue(chatMessage);
     }
 
-    public async Task StartAsync(CancellationToken ct)
+    public async Task StartAsync(CancellationTokenSource cts)
     {
         await _tcpClient.ConnectAsync("localhost", 8888);
         _networkStream = _tcpClient.GetStream();
@@ -33,25 +33,25 @@ internal sealed class NetworkManager : IDisposable
 
         _events.OnNext(new ConnectedEvent());
 
+        var receiveTask = ReceiveMessages(cts.Token);
+        var sendTask = SendMessages(cts.Token);
+
         try
         {
-            var receiveTask = ReceiveMessages(ct);
-            var sendTask = SendMessages(ct);
-
-            var firstTask = await Task.WhenAny(receiveTask, sendTask);
-            if (firstTask.IsFaulted)
-            {
-                throw firstTask.Exception;
-            }
-
-            await Task.WhenAll(receiveTask, sendTask);
+            //If any task throws we want to fail fast
+            await await Task.WhenAny(receiveTask, sendTask);
+        }
+        catch
+        {
+            cts.Cancel();
+            throw;
         }
         finally
         {
+            await Task.WhenAll(receiveTask, sendTask);
             _events.OnNext(new DisconnectedEvent());
             _events.OnCompleted();
         }
-
     }
 
     private async Task SendMessages(CancellationToken ct)
@@ -67,6 +67,8 @@ internal sealed class NetworkManager : IDisposable
             }
             await Task.Delay(500);
         }
+
+        Console.WriteLine(nameof(SendMessages) + " exited gracefully");
     }
 
     private async Task ReceiveMessages(CancellationToken ct)
@@ -82,13 +84,14 @@ internal sealed class NetworkManager : IDisposable
             if (networkString != null)
             {
                 var message = ChatMessage.FromOtherUser("", networkString);
-                throw new ArgumentException("test");
                 if (message == null)
                     throw new ShellException("Failed serialize text string: " + networkString);
 
                 _events.OnNext(new NetworkReceiveEvent(message));
             }
         }
+
+        Console.WriteLine(nameof(ReceiveMessages) + " exited gracefully");
     }
 
     public void Dispose()

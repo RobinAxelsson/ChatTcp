@@ -7,21 +7,37 @@ internal class Program
 {
     private static async Task Main(string[] args)
     {
-        using var source = new CancellationTokenSource();
+        using var cts = new CancellationTokenSource();
         var chatServer = new ChatServer();
-        var serverTask = chatServer.Run(source.Token);
 
-        while (true)
+        var serverTask = chatServer.Run(cts.Token);
+        var cancelTask = Task.Run(() =>
         {
-            var input = Console.ReadLine();
-            if(input == "cancel")
+            while (true)
             {
-                source.Cancel();
-                break;
+                var input = Console.ReadLine();
+                if (input == "cancel")
+                {
+                    cts.Cancel();
+                    break;
+                }
             }
+        });
+
+        try
+        {
+            await await Task.WhenAny(serverTask, cancelTask);
+        }
+        catch (Exception)
+        {
+            cts.Cancel(true);
+            throw;
+        }
+        finally
+        {
+            await Task.WhenAll(serverTask, cancelTask);
         }
 
-        await serverTask;
         Console.WriteLine("Exited gracefully!");
         Console.ReadKey();
     }

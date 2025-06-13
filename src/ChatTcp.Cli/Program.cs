@@ -30,8 +30,8 @@ internal class Program
             }
         });
 
-        var serverTask = networkManager.StartAsync(cts.Token);
-        var consoleTask = consoleChat.Activate(cts.Token);
+        var serverTask = networkManager.StartAsync(cts);
+        var consoleTask = consoleChat.Start(cts.Token);
 
         var firstTask = Task.WhenAny(serverTask, consoleTask);
         if (firstTask.IsFaulted)
