@@ -30,7 +30,33 @@ internal class Program
             }
         });
 
-        var serverTask = networkManager.StartAsync(cts);
+        Console.Clear();
+        Console.WriteLine("ChatTcp running");
+
+        string? alias = null;
+        while(alias == null || string.IsNullOrWhiteSpace(alias)){
+            Console.Write("Enter alias: ");
+            alias = Console.ReadLine()?.Trim();
+        }
+
+        string? host = null;
+        while (host == null || string.IsNullOrWhiteSpace(host))
+        {
+            Console.Write("Enter host: ");
+            host = Console.ReadLine()?.Trim();
+        }
+
+        int port = 0;
+        string? sPort = null;
+        while (sPort == null || !int.TryParse(sPort, out port))
+        {
+            Console.Write("Enter port: ");
+            sPort = Console.ReadLine()?.Trim();
+        }
+
+        Console.Clear();
+
+        var serverTask = networkManager.StartAsync(cts, host, port);
         var consoleTask = consoleChat.Start(cts.Token);
 
         var firstTask = Task.WhenAny(serverTask, consoleTask);

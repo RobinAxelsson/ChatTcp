@@ -50,7 +50,7 @@ internal class ConsoleChat
                 int promptDiff = newPromptRow - _promptRow;
 
                 var cursorPosition = Console.GetCursorPosition();
-                //Console.CursorVisible = false;
+                Console.CursorVisible = false;
 
                 bool movePrompt = newPromptRow != _promptRow;
 
@@ -72,7 +72,7 @@ internal class ConsoleChat
                         Console.Write(' ');
                     }
 
-                    //restore prompt
+                    //restore prompt on new row
                     Console.SetCursorPosition(0, newPromptRow);
                     Console.Write(PROMPT_PREFIX);
 

@@ -24,9 +24,9 @@ internal sealed class NetworkManager : IDisposable
         _outboundChatMessageQueue.Enqueue(chatMessage);
     }
 
-    public async Task StartAsync(CancellationTokenSource cts)
+    public async Task StartAsync(CancellationTokenSource cts, string host = "localhost", int port = 8888)
     {
-        await _tcpClient.ConnectAsync("localhost", 8888);
+        await _tcpClient.ConnectAsync(host, port);
         _networkStream = _tcpClient.GetStream();
         _reader = new StreamReader(_networkStream, Encoding.UTF8);
         _writer = new StreamWriter(_networkStream, Encoding.UTF8) { AutoFlush = true };
