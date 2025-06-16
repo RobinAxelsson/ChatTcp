@@ -1,9 +1,7 @@
 ﻿using System.Net.Sockets;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
-using System.Runtime.ExceptionServices;
 using System.Text;
-using System.Text.Json;
 using ChatTcp.Cli.Shell.Models;
 
 namespace ChatTcp.Cli.Shell;

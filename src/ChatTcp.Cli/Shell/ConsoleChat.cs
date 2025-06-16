@@ -186,6 +186,7 @@ internal class ConsoleChat
                 _prompt.Add(new Drawable(Console.CursorLeft, Console.CursorTop, key.KeyChar));
             }
         }
+
         Console.WriteLine(nameof(ConsoleChat) + " exited gracefully");
     }
 }
