@@ -18,12 +18,12 @@ internal class DisconnectedEvent : AppEvent;
 
 internal class NetworkReceiveEvent : AppEvent
 {
-    public NetworkReceiveEvent(ChatMessage chatMessage)
+    public NetworkReceiveEvent(ChatMessageDto chatMessage)
     {
         ChatMessage = chatMessage;
     }
 
-    public ChatMessage ChatMessage { get; }
+    public ChatMessageDto ChatMessage { get; }
 }
 
 internal class BackspaceEvent : AppEvent { }

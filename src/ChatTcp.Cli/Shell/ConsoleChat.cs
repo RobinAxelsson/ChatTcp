@@ -11,19 +11,19 @@ internal class ConsoleChat
     private int _nextChatRow = 0;
     private const string PROMPT_PREFIX = "Chat>";
     private const int PROMPT_JUMP = 5;
-    private ConcurrentQueue<string> _messageQueue = new();
-    public Action<ChatMessage>? OnCurrentUserMessageSubmitted { private get; set; }
+    private ConcurrentQueue<ChatMessageDto> _messageQueue = new();
+    public Action<string>? OnCurrentUserMessageSubmitted { private get; set; }
 
     public async Task DebugQueue(CancellationToken token)
     {
         while(!token.IsCancellationRequested)
         {
-            _messageQueue.Enqueue("Server: hello");
+            _messageQueue.Enqueue(new ChatMessageDto("Debugger", "Hello"));
             await Task.Delay(2000);
         }
     }
 
-    public void AddMessage(string message)
+    public void AddMessage(ChatMessageDto message)
     {
         _messageQueue.Enqueue(message);
     }
@@ -35,9 +35,10 @@ internal class ConsoleChat
 
         while (!token.IsCancellationRequested)
         {
-            if (_messageQueue.TryDequeue(out var message))
+            if (_messageQueue.TryDequeue(out var chatMessage))
             {
-                int endChatRow = _nextChatRow + message.Where(x => x == '\n').Count() + 1;
+                var chatEntry = $"{chatMessage.Sender}: {chatMessage.Message}";
+                int endChatRow = _nextChatRow + chatEntry.Where(x => x == '\n').Count() + 1;
 
                 int newPromptRow = _promptRow;
 
@@ -88,7 +89,7 @@ internal class ConsoleChat
 
                 //write new message
                 Console.SetCursorPosition(0, _nextChatRow);
-                Console.Write(message);
+                Console.Write(chatEntry);
                 _nextChatRow = endChatRow;
 
                 Console.SetCursorPosition(cursorPosition.Left, cursorPosition.Top + promptDiff);
@@ -139,7 +140,7 @@ internal class ConsoleChat
                     Console.SetCursorPosition(0, _nextChatRow);
                     Console.Write(prompt);
 
-                    OnCurrentUserMessageSubmitted?.Invoke(ChatMessage.FromCurrentUser(prompt));
+                    OnCurrentUserMessageSubmitted?.Invoke(prompt);
 
                     Console.SetCursorPosition(PROMPT_PREFIX.Length, _promptRow);
 

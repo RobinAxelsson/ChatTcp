@@ -1,7 +1,9 @@
-﻿using System.Net.Sockets;
+﻿using System.Collections.Concurrent;
+using System.Net.Sockets;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Text;
+using System.Text.Json;
 using ChatTcp.Cli.Shell.Models;
 
 namespace ChatTcp.Cli.Shell;
@@ -9,7 +11,7 @@ namespace ChatTcp.Cli.Shell;
 internal sealed class NetworkManager : IDisposable
 {
     private readonly Subject<AppEvent> _events = new();
-    private readonly Queue<ChatMessage> _outboundChatMessageQueue = new();
+    private readonly ConcurrentQueue<ChatMessageDto> _outboundChatMessageQueue = new();
     private readonly TcpClient _tcpClient = new();
     private NetworkStream? _networkStream;
     private StreamReader? _reader;
@@ -17,7 +19,7 @@ internal sealed class NetworkManager : IDisposable
 
     public IObservable<AppEvent> Events => _events.AsObservable();
 
-    public void QueueOutboundChatMessage(ChatMessage chatMessage)
+    public void QueueOutboundChatMessage(ChatMessageDto chatMessage)
     {
         _outboundChatMessageQueue.Enqueue(chatMessage);
     }
@@ -28,6 +30,16 @@ internal sealed class NetworkManager : IDisposable
         _networkStream = _tcpClient.GetStream();
         _reader = new StreamReader(_networkStream, Encoding.UTF8);
         _writer = new StreamWriter(_networkStream, Encoding.UTF8) { AutoFlush = true };
+
+        //TODO: TDD your way with these streams
+        //var firstByte = _networkStream.ReadByte();
+        //var version = (firstByte & 0xf0) >> 4; //Which endian?
+        //var frameType = firstByte & 0x04;
+        //var payloadLength = _networkStream.ReadByte();
+        //var payload = new byte[255];
+        //var messageBytes = _networkStream.Read(payload, 0, payloadLength);
+
+        //var sMessage = Encoding.UTF8.GetString(payload, 0, payloadLength);
 
         _events.OnNext(new ConnectedEvent());
 
@@ -61,7 +73,9 @@ internal sealed class NetworkManager : IDisposable
                 if (_writer == null)
                     throw new InvalidOperationException("Not connected");
 
-                await _writer.WriteLineAsync(message.Content);
+                var json = JsonSerializer.Serialize(message);
+
+                await _writer.WriteLineAsync(json);
             }
             await Task.Delay(500);
         }
@@ -77,17 +91,22 @@ internal sealed class NetworkManager : IDisposable
             {
                 throw new ShellException("reader is null");
             }
-            var networkString = await _reader.ReadLineAsync();
 
-            if (networkString != null)
+            var networkString = await _reader.ReadLineAsync(ct);
+
+            if(networkString == null)
             {
-                var message = ChatMessage.FromOtherUser("", networkString);
-                if (message == null)
-                    throw new ShellException("Failed serialize text string: " + networkString);
-
-                _events.OnNext(new NetworkReceiveEvent(message));
+                throw new ShellException("Networkmanager got null from server ReadLineAsync");
             }
+            //var message = ChatMessageDto.FromOtherUser("", networkString);
+            var message = JsonSerializer.Deserialize<ChatMessageDto>(networkString);
+
+            if (message == null)
+                throw new ShellException("Failed deserialize text string: " + networkString);
+
+            _events.OnNext(new NetworkReceiveEvent(message));
         }
+
 
         Console.WriteLine(nameof(ReceiveMessages) + " exited gracefully");
     }

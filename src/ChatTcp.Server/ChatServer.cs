@@ -8,15 +8,16 @@ internal class ChatServer
     private const int Port = 8888;
     private readonly IPAddress _ipAddress = IPAddress.Loopback;
     private readonly TcpListener _tcpServer;
-    private readonly List<Client> _clients = new();
+    private readonly List<ClientHandler> _clients = new();
+    private readonly List<Task> _listenTasks = new();
     public ChatServer()
     {
         _tcpServer = new TcpListener(_ipAddress, Port);
     }
 
-    private async Task OnReceivedMessage(string message, Client client, CancellationToken ct)
+    private async Task OnReceivedMessage(ChatMessageDto message, ClientHandler client, CancellationToken ct)
     {
-        Console.WriteLine(client.Username + ": " + message);
+        Console.WriteLine(message.Sender + ": " + message.Message);
 
         var tasks = new List<Task>();
         foreach (var c in _clients)
@@ -26,7 +27,7 @@ internal class ChatServer
 
             ct.ThrowIfCancellationRequested();
 
-            tasks.Add(c.Send(message));
+            tasks.Add(c.SendChatMessageToClient(message));
         }
 
         await Task.WhenAll(tasks);
@@ -43,12 +44,13 @@ internal class ChatServer
             while (true)
             {
                 var tcpClient = await _tcpServer.AcceptTcpClientAsync(cancellationToken);
-                var client = new Client(tcpClient);
-                _clients.Add(client);
-                Console.WriteLine("Client connected: " + tcpClient.Client.RemoteEndPoint);
-                await client.Send("Server: Welcome!");
 
-                _ = client.Listen(OnReceivedMessage, cancellationToken);
+                 var client = new ClientHandler(tcpClient);
+                _clients.Add(client);
+                Console.WriteLine("ClientHandler connected: " + tcpClient.Client.RemoteEndPoint);
+                await client.SendChatMessageToClient(new ChatMessageDto("Server " + _ipAddress, "Welcome to chat"));
+
+                 client.Listen(OnReceivedMessage, cancellationToken);
             }
         }
         catch (OperationCanceledException)
