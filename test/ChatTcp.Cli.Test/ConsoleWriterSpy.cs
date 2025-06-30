@@ -1,7 +1,6 @@
 ﻿using System.Text;
 
 namespace ChatTcp.Cli.Shell;
-
 public class ConsoleWriterSpy : TextWriter
 {
     private readonly TextWriter _consoleOut;

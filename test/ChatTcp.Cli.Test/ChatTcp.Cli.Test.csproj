@@ -17,6 +17,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\ChatTcp.Kernel\ChatTcp.Kernel.csproj" />
     <ProjectReference Include="..\..\src\ChatTcp.Cli\ChatTcp.Cli.csproj" />
   </ItemGroup>
 

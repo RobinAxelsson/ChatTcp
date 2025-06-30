@@ -1,5 +1,5 @@
 ﻿using ChatTcp.Cli.Shell;
-using ChatTcp.Cli.Shell.Models;
+using ChatTcp.Kernel;
 
 namespace ChatTcp.Cli;
 
@@ -16,7 +16,7 @@ internal class Program
         {
             if (e is NetworkReceiveEvent)
             {
-                consoleChat.AddMessage(((NetworkReceiveEvent)e).ChatMessage);
+                consoleChat.AddMessage((ChatMessageDto)((NetworkReceiveEvent)e).Packet);
             }
 
             if(e is DisconnectedEvent)

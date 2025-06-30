@@ -13,6 +13,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{99B657B4-C
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatTcp.Cli.Test", "test\ChatTcp.Cli.Test\ChatTcp.Cli.Test.csproj", "{1D3BFAB4-49F2-4B2D-AF23-7643925F568C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ChatTcp.Kernel", "ChatTcp.Kernel\ChatTcp.Kernel.csproj", "{8A49D7F2-A3E8-4F1E-99AB-4D3D79FDB348}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -31,6 +33,10 @@ Global
 		{1D3BFAB4-49F2-4B2D-AF23-7643925F568C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1D3BFAB4-49F2-4B2D-AF23-7643925F568C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1D3BFAB4-49F2-4B2D-AF23-7643925F568C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{8A49D7F2-A3E8-4F1E-99AB-4D3D79FDB348}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{8A49D7F2-A3E8-4F1E-99AB-4D3D79FDB348}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{8A49D7F2-A3E8-4F1E-99AB-4D3D79FDB348}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{8A49D7F2-A3E8-4F1E-99AB-4D3D79FDB348}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -39,6 +45,7 @@ Global
 		{39C6DD0A-C861-4EE9-98F2-55693BF499AF} = {0F0173D3-54C9-4397-BD07-0892E88522CC}
 		{26A43F71-A2A7-4BC6-A1BA-AB25F0339A38} = {0F0173D3-54C9-4397-BD07-0892E88522CC}
 		{1D3BFAB4-49F2-4B2D-AF23-7643925F568C} = {99B657B4-C9D5-4444-857E-F612AAB6A264}
+		{8A49D7F2-A3E8-4F1E-99AB-4D3D79FDB348} = {0F0173D3-54C9-4397-BD07-0892E88522CC}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {79D89674-636D-4A39-9455-E1D127517D27}

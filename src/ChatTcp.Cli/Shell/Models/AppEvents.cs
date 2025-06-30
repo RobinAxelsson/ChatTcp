@@ -1,4 +1,4 @@
-﻿using ChatTcp.Cli.Shell.Models;
+﻿using ChatTcp.Kernel;
 
 namespace ChatTcp.Cli.Shell;
 
@@ -18,12 +18,12 @@ internal class DisconnectedEvent : AppEvent;
 
 internal class NetworkReceiveEvent : AppEvent
 {
-    public NetworkReceiveEvent(ChatMessageDto chatMessage)
+    public NetworkReceiveEvent(ChatPacketDto packet)
     {
-        ChatMessage = chatMessage;
+        Packet = packet;
     }
 
-    public ChatMessageDto ChatMessage { get; }
+    public ChatPacketDto Packet { get; }
 }
 
 internal class BackspaceEvent : AppEvent { }

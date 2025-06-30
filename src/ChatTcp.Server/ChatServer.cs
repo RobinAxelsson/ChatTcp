@@ -1,5 +1,6 @@
 ﻿using System.Net;
 using System.Net.Sockets;
+using ChatTcp.Kernel;
 
 namespace ChatTcp.Server;
 
@@ -27,13 +28,13 @@ internal class ChatServer
 
             ct.ThrowIfCancellationRequested();
 
-            tasks.Add(c.SendChatMessageToClient(message));
+            tasks.Add(c.SendChatMessageToClient(message, ct));
         }
 
         await Task.WhenAll(tasks);
     }
 
-    public async Task Run(CancellationToken cancellationToken)
+    public async Task Run(CancellationToken ct)
     {
         _tcpServer.Start();
 
@@ -43,14 +44,14 @@ internal class ChatServer
         {
             while (true)
             {
-                var tcpClient = await _tcpServer.AcceptTcpClientAsync(cancellationToken);
+                var tcpClient = await _tcpServer.AcceptTcpClientAsync(ct);
 
                  var client = new ClientHandler(tcpClient);
                 _clients.Add(client);
                 Console.WriteLine("ClientHandler connected: " + tcpClient.Client.RemoteEndPoint);
-                await client.SendChatMessageToClient(new ChatMessageDto("Server " + _ipAddress, "Welcome to chat"));
+                await client.SendChatMessageToClient(new ChatMessageDto("Server " + _ipAddress, "Welcome to chat"), ct);
 
-                 client.Listen(OnReceivedMessage, cancellationToken);
+                 client.Listen(OnReceivedMessage, ct);
             }
         }
         catch (OperationCanceledException)
