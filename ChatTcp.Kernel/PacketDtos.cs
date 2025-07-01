@@ -13,5 +13,4 @@ public class ChatMessageDto : ChatPacketDto
 
 public abstract class ChatPacketDto
 {
-    
 }

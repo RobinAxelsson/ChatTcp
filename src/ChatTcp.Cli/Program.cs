@@ -11,25 +11,6 @@ internal class Program
         using var networkManager = new NetworkManager();
         var consoleChat = new ConsoleChat();
 
-
-        networkManager.Events.Subscribe(e =>
-        {
-            if (e is NetworkReceiveEvent)
-            {
-                consoleChat.AddMessage((ChatMessageDto)((NetworkReceiveEvent)e).Packet);
-            }
-
-            if(e is DisconnectedEvent)
-            {
-                consoleChat.AddMessage(new ChatMessageDto("Logger", "disconnected"));
-            }
-
-            if (e is ConnectedEvent)
-            {
-                consoleChat.AddMessage(new ChatMessageDto("Logger", "connected"));
-            }
-        });
-
         Console.Clear();
         Console.WriteLine("ChatTcp running");
 
@@ -39,24 +20,10 @@ internal class Program
             alias = Console.ReadLine()?.Trim();
         }
 
-        //string? host = null;
-        //while (host == null || string.IsNullOrWhiteSpace(host))
-        //{
-        //    Console.Write("Enter host: ");
-        //    host = Console.ReadLine()?.Trim();
-        //}
-
-        //int port = 0;
-        //string? sPort = null;
-        //while (sPort == null || !int.TryParse(sPort, out port))
-        //{
-        //    Console.Write("Enter port: ");
-        //    sPort = Console.ReadLine()?.Trim();
-        //}
-
         Console.Clear();
 
-        consoleChat.OnCurrentUserMessageSubmitted = message => networkManager.QueueOutboundChatMessage(new ChatMessageDto(alias, message));
+        consoleChat.OnCurrentUserMessageSubmitted = message => networkManager.SendChatMessageToServer(new ChatMessageDto(alias, message));
+        networkManager.OnPacketReceivedFromServer = consoleChat.ReceiveServerPacket;
 
         var serverTask = networkManager.StartAsync(cts);
         var consoleTask = consoleChat.Start(cts.Token);

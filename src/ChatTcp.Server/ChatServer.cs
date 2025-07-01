@@ -10,7 +10,6 @@ internal class ChatServer
     private readonly IPAddress _ipAddress = IPAddress.Loopback;
     private readonly TcpListener _tcpServer;
     private readonly List<ClientHandler> _clients = new();
-    private readonly List<Task> _listenTasks = new();
     public ChatServer()
     {
         _tcpServer = new TcpListener(_ipAddress, Port);

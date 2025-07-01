@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Reactive.Linq;
+using ChatTcp.Cli.Shell;
 using ChatTcp.Cli.Shell.View;
 using ChatTcp.Kernel;
 namespace ChatTcp.Cli;
@@ -13,19 +14,17 @@ internal class ConsoleChat
     private const int PROMPT_JUMP = 5;
     private ConcurrentQueue<ChatMessageDto> _messageQueue = new();
     public Action<string>? OnCurrentUserMessageSubmitted { private get; set; }
-
-    public async Task DebugQueue(CancellationToken token)
+    public void ReceiveServerPacket(ChatPacketDto dto)
     {
-        while(!token.IsCancellationRequested)
+        switch (dto)
         {
-            _messageQueue.Enqueue(new ChatMessageDto("Debugger", "Hello"));
-            await Task.Delay(2000);
-        }
-    }
+            case ChatMessageDto chatPacketDto:
+                _messageQueue.Enqueue(chatPacketDto);
+                break;
 
-    public void AddMessage(ChatMessageDto message)
-    {
-        _messageQueue.Enqueue(message);
+            default:
+                throw new ShellException("Not implimented packet: " + dto);
+        }
     }
 
     public async Task Start(CancellationToken token)
@@ -99,7 +98,7 @@ internal class ConsoleChat
             if (Console.KeyAvailable)
             {
                 var key = Console.ReadKey(true);
-                if (key.Modifiers == ConsoleModifiers.Control && key.Key == ConsoleKey.Enter)
+                if (key.Modifiers == ConsoleModifiers.Control && key.Key == ConsoleKey.Enter) //Send message keystrokes
                 {
                     if (!_prompt.Any() || _prompt.All(x => char.IsWhiteSpace(x.C)))
                     {
@@ -138,6 +137,7 @@ internal class ConsoleChat
                     //write message
                     var prompt = string.Concat(_prompt.Select(x => x.C));
                     Console.SetCursorPosition(0, _nextChatRow);
+                    Console.Write("Me: ");
                     Console.Write(prompt);
 
                     OnCurrentUserMessageSubmitted?.Invoke(prompt);

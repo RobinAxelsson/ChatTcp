@@ -1,21 +1,18 @@
 ﻿using System.Collections.Concurrent;
 using System.Net.Sockets;
-using System.Reactive.Linq;
-using System.Reactive.Subjects;
 using ChatTcp.Kernel;
 
 namespace ChatTcp.Cli.Shell;
 
 internal sealed class NetworkManager : IDisposable
 {
-    private readonly Subject<AppEvent> _events = new();
     private readonly ConcurrentQueue<ChatMessageDto> _outboundChatMessageQueue = new();
     private readonly TcpClient _tcpClient = new();
     private NetworkStream? _networkStream;
 
-    public IObservable<AppEvent> Events => _events.AsObservable();
+    public Action<ChatPacketDto>? OnPacketReceivedFromServer { get; set; }
 
-    public void QueueOutboundChatMessage(ChatMessageDto chatMessage)
+    public void SendChatMessageToServer(ChatMessageDto chatMessage)
     {
         _outboundChatMessageQueue.Enqueue(chatMessage);
     }
@@ -24,8 +21,6 @@ internal sealed class NetworkManager : IDisposable
     {
         await _tcpClient.ConnectAsync(host, port);
         _networkStream = _tcpClient.GetStream();
-        _events.OnNext(new ConnectedEvent());
-
         var receiveTask = ReceiveMessages(cts.Token);
         var sendTask = SendMessages(cts.Token);
 
@@ -42,8 +37,6 @@ internal sealed class NetworkManager : IDisposable
         finally
         {
             await Task.WhenAll(receiveTask, sendTask);
-            _events.OnNext(new DisconnectedEvent());
-            _events.OnCompleted();
         }
     }
 
@@ -76,7 +69,7 @@ internal sealed class NetworkManager : IDisposable
             }
 
             var message = await PacketStream.ReadPacketAsync(_networkStream, ct);
-            _events.OnNext(new NetworkReceiveEvent(message));
+            OnPacketReceivedFromServer?.Invoke(message);
         }
 
         Console.WriteLine(nameof(ReceiveMessages) + " exited gracefully");
@@ -86,9 +79,6 @@ internal sealed class NetworkManager : IDisposable
     {
         _networkStream?.Dispose();
         _tcpClient.Dispose();
-
-        _events.OnCompleted();
-        _events.Dispose();
     }
 }
 
