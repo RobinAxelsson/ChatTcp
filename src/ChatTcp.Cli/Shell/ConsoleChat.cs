@@ -13,7 +13,7 @@ internal class ConsoleChat
     private const string PROMPT_PREFIX = "Chat>";
     private const int PROMPT_JUMP = 5;
     private ConcurrentQueue<ChatMessageDto> _messageQueue = new();
-    public Action<string>? OnCurrentUserMessageSubmitted { private get; set; }
+    public Action<ChatMessageDto>? OnCurrentUserMessageSubmitted { private get; set; }
     public void ReceiveServerPacket(ChatPacketDto dto)
     {
         switch (dto)
@@ -29,6 +29,18 @@ internal class ConsoleChat
 
     public async Task Start(CancellationToken token)
     {
+        Console.Clear();
+        Console.WriteLine("ChatTcp running");
+
+        string? alias = null;
+        while (alias == null || string.IsNullOrWhiteSpace(alias))
+        {
+            Console.Write("Enter alias: ");
+            alias = Console.ReadLine()?.Trim();
+        }
+
+        Console.Clear();
+
         Console.SetCursorPosition(0, _promptRow);
         Console.Write(PROMPT_PREFIX);
 
@@ -140,7 +152,7 @@ internal class ConsoleChat
                     Console.Write("Me: ");
                     Console.Write(prompt);
 
-                    OnCurrentUserMessageSubmitted?.Invoke(prompt);
+                    OnCurrentUserMessageSubmitted?.Invoke(new ChatMessageDto(alias, prompt));
 
                     Console.SetCursorPosition(PROMPT_PREFIX.Length, _promptRow);
 

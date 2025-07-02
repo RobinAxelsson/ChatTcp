@@ -48,7 +48,7 @@ internal class ChatServer
                  var client = new ClientHandler(tcpClient);
                 _clients.Add(client);
                 Console.WriteLine("ClientHandler connected: " + tcpClient.Client.RemoteEndPoint);
-                await client.SendChatMessageToClient(new ChatMessageDto("Server " + _ipAddress, "Welcome to chat"), ct);
+                await client.SendChatMessageToClient(new ChatMessageDto("Server", "Connected to " + _ipAddress + ":" + Port), ct);
 
                  client.Listen(OnReceivedMessage, ct);
             }
