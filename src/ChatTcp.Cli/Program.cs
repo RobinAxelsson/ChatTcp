@@ -25,6 +25,5 @@ internal class Program
         }
 
         await Task.WhenAll(serverTask, consoleTask);
-
     }
 }

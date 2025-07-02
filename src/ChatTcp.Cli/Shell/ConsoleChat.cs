@@ -1,9 +1,7 @@
 ﻿using System.Collections.Concurrent;
 using System.Reactive.Linq;
-using ChatTcp.Cli.Shell;
-using ChatTcp.Cli.Shell.View;
 using ChatTcp.Kernel;
-namespace ChatTcp.Cli;
+namespace ChatTcp.Cli.Shell;
 
 internal class ConsoleChat
 {
