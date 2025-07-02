@@ -17,13 +17,14 @@ internal class Program
         var serverTask = networkManager.StartAsync(cts);
         var consoleTask = consoleChat.Start(cts.Token);
 
-        var firstTask = Task.WhenAny(serverTask, consoleTask);
-        if (firstTask.IsFaulted)
+        try
+        {
+            await await Task.WhenAny(serverTask, consoleTask);
+        }
+        finally
         {
             cts.Cancel();
-            throw firstTask.Exception;
+            await Task.WhenAll(serverTask, consoleTask);
         }
-
-        await Task.WhenAll(serverTask, consoleTask);
     }
 }

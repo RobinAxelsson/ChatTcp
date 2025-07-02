@@ -9,36 +9,17 @@ internal class Program
     {
         using var cts = new CancellationTokenSource();
         var chatServer = new ChatServer();
-
-        var serverTask = chatServer.Run(cts.Token);
-        var cancelTask = Task.Run(() =>
-        {
-            while (true)
-            {
-                var input = Console.ReadLine();
-                if (input == "cancel")
-                {
-                    cts.Cancel();
-                    break;
-                }
-            }
-        });
-
+        var chatTask = chatServer.Run(cts.Token);
         try
         {
-            await await Task.WhenAny(serverTask, cancelTask);
-        }
-        catch (Exception)
-        {
-            cts.Cancel(true);
-            throw;
+            await chatTask;
         }
         finally
         {
-            await Task.WhenAll(serverTask, cancelTask);
+            cts.Cancel();
+            await chatTask;
+            Console.WriteLine("Exited gracefully!");
         }
 
-        Console.WriteLine("Exited gracefully!");
-        Console.ReadKey();
     }
 }
