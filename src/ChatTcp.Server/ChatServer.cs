@@ -16,23 +16,6 @@ internal class ChatServer
         _tcpServer = new TcpListener(_ipAddress, Port);
     }
 
-    private async Task BroadcastNewChatMessage(ChatMessageDto message, ClientHandler sender, CancellationToken ct)
-    {
-        Console.WriteLine($"{message.Sender}: {message.Message}");
-
-        var tasks = new List<Task>();
-        foreach (var client in _clients)
-        {
-            if (client == sender)
-                continue;
-
-            ct.ThrowIfCancellationRequested();
-            tasks.Add(client.SendChatMessageToClient(message, ct));
-        }
-
-        await Task.WhenAll(tasks);
-    }
-
     public async Task Run(CancellationToken ct)
     {
         _tcpServer.Start();
@@ -61,11 +44,9 @@ internal class ChatServer
             await clientHandler.SendChatMessageToClient(
                 new ChatMessageDto("Server", $"Connected to {_ipAddress}:{Port}"), ct);
 
-            // Start listening on this client and track its task
             var clientTask = HandleClientAsync(clientHandler, ct);
             _clientTasks.Add(clientTask);
 
-            // Detach cleanup logic: remove completed tasks to avoid growing list
             _ = clientTask.ContinueWith(t =>
             {
                 _clientTasks.Remove(t);
@@ -84,12 +65,37 @@ internal class ChatServer
         {
             await clientHandler.Listen(BroadcastNewChatMessage, ct);
         }
+        catch(IOException ex)
+        {
+            if (!((ex.InnerException as SocketException)?.ErrorCode == 10054))
+            {
+                throw;
+            }
+
+            Console.WriteLine($"{clientHandler.RemoteEndPoint} - {clientHandler.Username} got disconnedted");
+        }
         finally
         {
             clientHandler.Dispose();
             _clients.Remove(clientHandler);
-            Console.WriteLine($"Client disconnected: {clientHandler.RemoteEndPoint}");
         }
+    }
+
+    private async Task BroadcastNewChatMessage(ChatMessageDto message, ClientHandler sender, CancellationToken ct)
+    {
+        Console.WriteLine($"{message.Sender}: {message.Message}");
+
+        var tasks = new List<Task>();
+        foreach (var client in _clients)
+        {
+            if (client == sender)
+                continue;
+
+            ct.ThrowIfCancellationRequested();
+            tasks.Add(client.SendChatMessageToClient(message, ct));
+        }
+
+        await Task.WhenAll(tasks);
     }
 
     public void Stop()
