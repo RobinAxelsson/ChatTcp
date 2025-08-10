@@ -10,14 +10,16 @@ internal class ConsoleChat
     private int _nextChatRow = 0;
     private const string PROMPT_PREFIX = "Chat>";
     private const int PROMPT_JUMP = 5;
-    private ConcurrentQueue<ChatMessageDto> _messageQueue = new();
-    public Action<ChatMessageDto>? OnCurrentUserMessageSubmitted { private get; set; }
-    public void ReceiveServerPacket(ChatPacketDto dto)
+    private string? _token;
+    private ConcurrentQueue<ChatMessageDto> _incomingChatMessageQueue = new();
+    public Action<ChatMessageDto>? SendChatMessage { private get; set; }
+    public Func<JoinChatDto, string>? SendTokenRequest { private get; set; }
+    public void ReceiveServerPacket(WirePacketDto dto)
     {
         switch (dto)
         {
-            case ChatMessageDto chatPacketDto:
-                _messageQueue.Enqueue(chatPacketDto);
+            case ChatMessageDto WirePacketDto:
+                _incomingChatMessageQueue.Enqueue(WirePacketDto);
                 break;
 
             default:
@@ -25,26 +27,34 @@ internal class ConsoleChat
         }
     }
 
-    public async Task Start(CancellationToken token)
+
+    public async Task Start(CancellationToken ct)
     {
         Console.Clear();
-        Console.WriteLine("ChatTcp running");
+        Console.WriteLine("ChatTcpManager running");
 
-        string? alias = null;
-        while (alias == null || string.IsNullOrWhiteSpace(alias))
-        {
-            Console.Write("Enter alias: ");
-            alias = Console.ReadLine()?.Trim();
-        }
+        //if (SendTokenRequest == null)
+        //    throw new ShellException(nameof(SendTokenRequest) + " was null");
+
+        //string? alias = null;
+        //while (string.IsNullOrWhiteSpace(_token))
+        //{
+        //    Console.Write("Enter alias: ");
+        //    alias = Console.ReadLine()?.Trim();
+
+        //    if(alias != null)
+        //        _token = SendTokenRequest!.Invoke(new JoinChatDto(alias));
+        //}
+        var alias = "bob";
 
         Console.Clear();
 
         Console.SetCursorPosition(0, _promptRow);
         Console.Write(PROMPT_PREFIX);
 
-        while (!token.IsCancellationRequested)
+        while (!ct.IsCancellationRequested)
         {
-            if (_messageQueue.TryDequeue(out var chatMessage))
+            if (_incomingChatMessageQueue.TryDequeue(out var chatMessage))
             {
                 var chatEntry = $"{chatMessage.Sender}: {chatMessage.Message}";
                 int endChatRow = _nextChatRow + chatEntry.Where(x => x == '\n').Count() + 1;
@@ -150,7 +160,7 @@ internal class ConsoleChat
                     Console.Write("Me: ");
                     Console.Write(prompt);
 
-                    OnCurrentUserMessageSubmitted?.Invoke(new ChatMessageDto(alias, prompt));
+                    SendChatMessage?.Invoke(new ChatMessageDto(alias, prompt));
 
                     Console.SetCursorPosition(PROMPT_PREFIX.Length, _promptRow);
 

@@ -19,7 +19,7 @@ public class PacketStream
         }
     }
     
-    public static async Task<ChatPacketDto> ReadPacketAsync(Stream stream, CancellationToken ct)
+    public static async Task<WirePacketDto> ReadPacketAsync(Stream stream, CancellationToken ct)
     {
         var buffer = new byte[3];
 
@@ -44,10 +44,10 @@ public class PacketStream
 
         var sPayload = Encoding.UTF8.GetString(buffer);
 
-        ChatPacketDto? packetDto;
+        WirePacketDto? packetDto;
         try
         {
-            packetDto = JsonSerializer.Deserialize(sPayload, _typeDict[payloadType]) as ChatPacketDto;
+            packetDto = JsonSerializer.Deserialize(sPayload, _typeDict[payloadType]) as WirePacketDto;
         }
         catch (JsonException ex)
         {
@@ -62,7 +62,7 @@ public class PacketStream
 
     public static async Task WritePacketAsync
 
-        <T>(T packetDto, Stream stream, CancellationToken ct) where T : ChatPacketDto
+        <T>(T packetDto, Stream stream, CancellationToken ct) where T : WirePacketDto
     {
         const byte version = 1;
 

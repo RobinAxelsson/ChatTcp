@@ -7,12 +7,21 @@ internal class Program
 {
     private static async Task Main(string[] args)
     {
+        //Entitiy component system
+        //Actors entity
+        //Connection entity
+        //Chat
+        //Logins
+        //Groups
+        //Components
+
+
         var cts = new CancellationTokenSource();
         using var networkManager = new NetworkManager();
         var consoleChat = new ConsoleChat();
 
         networkManager.OnPacketReceivedFromServer = consoleChat.ReceiveServerPacket;
-        consoleChat.OnCurrentUserMessageSubmitted = networkManager.SendChatMessageToServer;
+        consoleChat.SendChatMessage = networkManager.SendChatMessageToServer;
 
         var serverTask = networkManager.StartAsync(cts);
         var consoleTask = consoleChat.Start(cts.Token);

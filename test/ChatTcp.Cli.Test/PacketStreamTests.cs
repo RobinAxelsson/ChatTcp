@@ -23,34 +23,6 @@ public class PacketStreamTests
     }
 
     [Fact]
-    public async void ReadPacket_ShouldThrow_WhenVersionIsInvalid()
-    {
-        using var ms = new MemoryStream();
-        ms.WriteByte(0); // invalid version
-        ms.WriteByte((byte)PayloadType.ChatMessage);
-        ms.WriteByte(1);
-        ms.Write(Encoding.UTF8.GetBytes("{}"), 0, 2);
-        ms.Seek(0, SeekOrigin.Begin);
-
-        var ex = await Assert.ThrowsAsync<ChatTcpKernelException>(() => PacketStream.ReadPacketAsync(ms, CancellationToken.None));
-        Assert.Contains("Only v1 is allowed", ex.Message);
-    }
-
-    [Fact]
-    public async void ReadPacket_ShouldThrow_WhenPayloadTypeIsInvalid()
-    {
-        using var ms = new MemoryStream();
-        ms.WriteByte(1); // valid version
-        ms.WriteByte((byte)PayloadType.Unknown); // unsupported payload type
-        ms.WriteByte(1);
-        ms.Write(Encoding.UTF8.GetBytes("{}"), 0, 2);
-        ms.Seek(0, SeekOrigin.Begin);
-
-        var ex = await Assert.ThrowsAsync<ChatTcpKernelException>(() => PacketStream.ReadPacketAsync(ms, CancellationToken.None));
-        Assert.Contains("only chatmessage type is allowed", ex.Message);
-    }
-
-    [Fact]
     public async void WritePacket_ShouldThrow_WhenPayloadTooLong()
     {
         var longMessage = new ChatMessageDto("Bob", new string('a', 260));

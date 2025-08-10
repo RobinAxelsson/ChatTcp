@@ -1,21 +1,20 @@
 ﻿using System.Collections.Concurrent;
 using System.Net.Sockets;
+using System.Reactive.Subjects;
 using ChatTcp.Kernel;
 
 namespace ChatTcp.Cli.Shell;
 
 internal sealed class NetworkManager : IDisposable
 {
-    private readonly ConcurrentQueue<ChatMessageDto> _outboundChatMessageQueue = new();
+    private readonly ConcurrentQueue<WirePacketDto> _outboundPacketQueue = new();
+    private readonly Subject<WirePacketDto> _inboundPackets = new();
+
     private readonly TcpClient _tcpClient = new();
     private NetworkStream? _networkStream;
 
-    public Action<ChatPacketDto>? OnPacketReceivedFromServer { get; set; }
+    public Action<WirePacketDto>? OnPacketReceivedFromServer { get; set; }
 
-    public void SendChatMessageToServer(ChatMessageDto chatMessage)
-    {
-        _outboundChatMessageQueue.Enqueue(chatMessage);
-    }
 
     public async Task StartAsync(CancellationTokenSource cts, string host = "localhost", int port = 8888)
     {
@@ -40,18 +39,62 @@ internal sealed class NetworkManager : IDisposable
         }
     }
 
+
+
+    public void SendChatMessageToServer(ChatMessageDto chatMessage)
+    {
+        _outboundPacketQueue.Enqueue(chatMessage);
+    }
+
+    internal async Task<JoinChatResponseDto?> SendJoinChatRequest(JoinChatDto joinChatDto, CancellationToken ct)
+    {
+        _outboundPacketQueue.Enqueue(joinChatDto);
+        JoinChatResponseDto? joinChatResponseDto = null;
+        _inboundPackets.Subscribe(x =>
+        {
+            if (x != null && x.Id == joinChatDto.Id)
+            {
+                joinChatResponseDto = (JoinChatResponseDto)x;
+            }
+        });
+
+        while (!ct.IsCancellationRequested)
+        {
+            if(joinChatResponseDto != null)
+            {
+                return joinChatResponseDto;
+            }
+            await Task.Delay(100, ct);
+        }
+
+        return null;
+    }
+
     private async Task SendMessages(CancellationToken ct)
     {
         while (!ct.IsCancellationRequested)
         {
-            if (_outboundChatMessageQueue.TryDequeue(out var message))
+            if (_outboundPacketQueue.TryDequeue(out var message))
             {
                 if(_networkStream == null)
                 {
                     throw new ShellException(nameof(_networkStream) + " is null");
                 }
 
-                await PacketStream.WritePacketAsync(message, _networkStream, ct);
+                switch (message)
+                {
+                    case JoinChatDto joinChatDto:
+                        await PacketStream.WritePacketAsync(joinChatDto, _networkStream, ct);
+                        break;
+                    case ChatMessageDto chatMessageDto:
+                        await PacketStream.WritePacketAsync(chatMessageDto, _networkStream, ct);
+                        break;
+                    case JoinChatResponseDto joinChatResponseDto:
+                        await PacketStream.WritePacketAsync(joinChatResponseDto, _networkStream, ct);
+                        break;
+                    default:
+                        throw new ShellException("Not implimented");
+                }
             }
             await Task.Delay(500);
         }
@@ -69,6 +112,7 @@ internal sealed class NetworkManager : IDisposable
             }
 
             var message = await PacketStream.ReadPacketAsync(_networkStream, ct);
+            _inboundPackets.OnNext(message);
             OnPacketReceivedFromServer?.Invoke(message);
         }
 
