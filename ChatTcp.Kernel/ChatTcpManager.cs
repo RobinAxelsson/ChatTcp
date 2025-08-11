@@ -1,145 +1,141 @@
 ﻿using System.Net;
 using System.Net.Sockets;
+using ChatTcp.Kernel.Resources;
 
 namespace ChatTcp.Kernel;
 
-public enum ServerState
-{
-    Off,
-    Starting,
-    Start,
-    Running,
-    Exitting,
-    Exited
-}
 public static class ChatTcpManager
 {
-    public static TcpListener? TcpServer = null;
-    public static List<(Entity Id, Task<TcpClient> Task)> TcpClientsAwaiters = new();
-    public static List<(Entity Id, TcpClient TcpClient)> TcpClients = new();
-    public static List<(Entity Id, NetworkStream NetworkStream)> NetworkStreams = new();
-    public static List<(Entity Id, Task<WirePacketDto> Task)> IncomingPacketAwaiters = new();
-    public static List<(Entity Id, Task Task)> SendMessageAwaiters = new();
+    public static List<Listener> Listeners = new();
+    public static List<TcpClientTask> AcceptTcpClientTasks = new();
+    public static List<Connection> Connections = new();
+    public static List<SendMessageTask> SendMessageTasks = new();
+    public static List<ReceiveMessageTask> ReceiveMessageTasks = new();
 
-    public static ServerState ServerState = ServerState.Start;
     public static void Run()
     {
-        var cts = new CancellationTokenSource();
+        var cts = new CancellationTokenSource(); //world singleton
+
+        var listeners = new List<Listener>
+        {
+            new(IPAddress.Loopback, 8888),
+            new(IPAddress.Loopback, 8889)
+        };
 
         while (!cts.IsCancellationRequested)
         {
-            if (ServerState == ServerState.Start && TcpServer == null)
+            for (int i = listeners.Count() - 1; i >= 0; i--)
             {
-                Console.WriteLine("Starting server");
-                ServerState = ServerState.Starting;
-                TcpServer = new TcpListener(IPAddress.Loopback, 8888);
-                TcpServer.Start();
-                ServerState = ServerState.Running;
-                Console.WriteLine("Server running");
-            }
-            if (TcpClientsAwaiters.Count() < 3)
-            {
-                var tcpClient = TcpServer!.AcceptTcpClientAsync();
-                TcpClientsAwaiters.Add((Entity.New, tcpClient));
-                Console.WriteLine("Added TcpClient awaiter");
-            }
-
-            for (int i = TcpClientsAwaiters.Count - 1; i >= 0; i--)
-            {
-                var client = TcpClientsAwaiters[i];
-                if (client.Task.IsCompletedSuccessfully)
+                var listener = listeners[i];
+                if (listener.State == ListenerState.Created)
                 {
-                    TcpClientsAwaiters.RemoveAt(i);
-                    TcpClients.Add((client.Id, client.Task.Result));
-                    Console.WriteLine("Client connected: " + client.Task.Result.Client.RemoteEndPoint);
+                    Console.WriteLine("{0} created", listener);
+                    listener.Start();
+                    Console.WriteLine("{0} started", listener);
                 }
-                if (client.Task.IsFaulted || client.Task.IsCanceled)
+                else if (listener.State == ListenerState.Listening)
                 {
-                    TcpClientsAwaiters.RemoveAt(i);
-                    Console.WriteLine(client.Task.Exception);
+                    int acceptOpsCount = AcceptTcpClientTasks.Where(x => x.Listener == listener).Count();
+                    for (int j = 0; j < listener.ReceiversMax; j++)
+                    {
+                        if (acceptOpsCount + j < listener.ReceiversMax)
+                        {
+                            AcceptTcpClientTasks.Add(new TcpClientTask(listener, listener.Socket.AcceptTcpClientAsync(cts.Token)));
+                            Console.WriteLine("{0} accept tcp client task created", listener);
+                        }
+                    }
+                }
+                else
+                {
+                    throw new ChatTcpKernelException("State not implimented: " + listener.State);
                 }
             }
 
-            for (int i = TcpClients.Count - 1; i >= 0; i--)
+            for (int i = AcceptTcpClientTasks.Count - 1; i >= 0; i--)
             {
-                var client = TcpClients[i];
-                if (NetworkStreams.FirstOrDefault(x => x.Id == client.Id) == default)
+                var acceptTcpClientTask = AcceptTcpClientTasks[i];
+
+                if (acceptTcpClientTask.Task.IsCompletedSuccessfully)
                 {
-                    var networkStream = client.TcpClient.GetStream();
-                    NetworkStreams.Add((client.Id, networkStream));
-                    Console.WriteLine("Established networkStream");
-                    SendMessageAwaiters.Add((client.Id, PacketStream.WritePacketAsync(new ChatMessageDto("Server", $"Established connection to {TcpServer!.Server.RemoteEndPoint} {TcpServer.LocalEndpoint}"), networkStream, cts.Token)));
+                    var connection = new Connection(acceptTcpClientTask.Task.Result);
+                    Connections.Add(connection);
+                    Console.WriteLine($"{connection} created");
+                    AcceptTcpClientTasks.RemoveAt(i);
+
+                    SendMessageTasks.Add(new SendMessageTask(connection, PacketStream.WritePacketAsync(new ChatMessageDto(acceptTcpClientTask.Listener.ToString(), $"Established connection"), connection.NetworkStream, cts.Token)));
+                }
+
+                if (acceptTcpClientTask.Task.IsFaulted)
+                {
+                    Console.WriteLine(acceptTcpClientTask.Listener + " faulted accept tcp client task");
+                    Console.WriteLine(acceptTcpClientTask.Task.AsTask().Exception);
+                    AcceptTcpClientTasks.RemoveAt(i);
+                }
+
+                if (acceptTcpClientTask.Task.IsCanceled)
+                {
+                    Console.WriteLine(acceptTcpClientTask.Listener + " canceled accept tcp client task");
+                    AcceptTcpClientTasks.RemoveAt(i);
                 }
             }
 
-            for (int i = NetworkStreams.Count - 1; i >= 0; i--)
+            for (int i = Connections.Count - 1; i >= 0; i--)
             {
-                var stream = NetworkStreams[i];
-                if (IncomingPacketAwaiters.FirstOrDefault(x => x.Id == stream.Id) == default)
+                var conn = Connections[i];
+                if(!ReceiveMessageTasks.Any(x => x.Transport == conn))
                 {
-                    IncomingPacketAwaiters.Add((stream.Id, PacketStream.ReadPacketAsync(stream.NetworkStream, cts.Token)));
-                    Console.WriteLine("Added new packetDto awaiter");
+                    ReceiveMessageTasks.Add(new ReceiveMessageTask(conn, PacketStream.ReadPacketAsync(conn.NetworkStream, cts.Token)));
+                    Console.WriteLine(conn + " waiting on packet ");
                 }
             }
 
-            for (int i = IncomingPacketAwaiters.Count - 1; i >= 0; i--)
+            for (int i = ReceiveMessageTasks.Count - 1; i >= 0; i--)
             {
-                var packetAwaiter = IncomingPacketAwaiters[i];
-                if (packetAwaiter.Task.IsCompletedSuccessfully)
+                var receiveMessageTask = ReceiveMessageTasks[i];
+
+                if (receiveMessageTask.Task.IsCompletedSuccessfully)
                 {
-                    Console.WriteLine("Message received");
-                    IncomingPacketAwaiters.RemoveAt(i);
-                    var packetDto = packetAwaiter.Task.Result;
+                    var packetDto = receiveMessageTask.Task.Result;
+                    Console.WriteLine(receiveMessageTask.Transport + " received " + packetDto.GetType().Name + " " + packetDto.Id);
 
                     switch (packetDto)
                     {
                         case ChatMessageDto chat:
-                            Console.WriteLine($"Relaying {chat.Id}: {chat.Message}");
-
-                            for (int sI = NetworkStreams.Count - 1; sI >= 0; sI--)
+                            for (int j = Connections.Count - 1; j >= 0; j--)
                             {
-                                var networkStream = NetworkStreams[sI];
-                                if(networkStream.Id == packetAwaiter.Id)
+                                var conn = Connections[j];
+                                if (conn == receiveMessageTask.Transport)
                                     continue;
 
-                                SendMessageAwaiters.Add((networkStream.Id, PacketStream.WritePacketAsync(chat, networkStream.NetworkStream, cts.Token)));
+                                SendMessageTasks.Add(new SendMessageTask(conn, PacketStream.WritePacketAsync(chat, conn.NetworkStream, cts.Token)));
+                                Console.WriteLine($"{conn} create send message task {chat}");
                             }
-
                             break;
+
                         case JoinChatDto joinChat:
                             Console.WriteLine($"{joinChat.Id} wants to join chat");
                             break;
+
                         default:
-                            throw new ChatTcpKernelException("invailid type");
+                            Console.WriteLine(receiveMessageTask.Transport + " invalid packet type received");
+                            AcceptTcpClientTasks.RemoveAt(i);
+                            break;
                     }
 
-                    if (NetworkStreams.FirstOrDefault(x => x.Id == packetAwaiter.Id) == default)
-                    {
-                        throw new ChatTcpKernelException($"{packetAwaiter.Id} should have networkstream networkStream");
-                    }
+                    ReceiveMessageTasks.RemoveAt(i);
+                }
 
-                    var stream = NetworkStreams.FirstOrDefault(x => x.Id == packetAwaiter.Id).NetworkStream;
-                    var sendMessageAwaiter = PacketStream.WritePacketAsync(new ChatMessageDto("Server", "Received packet"), stream, cts.Token);
-                    SendMessageAwaiters.Add((packetAwaiter.Id, sendMessageAwaiter));
-                }
-                if (packetAwaiter.Task.IsFaulted || packetAwaiter.Task.IsCanceled)
+                if (receiveMessageTask.Task.IsFaulted)
                 {
-                    Console.WriteLine(packetAwaiter.Task.Exception);
-                    cts.Cancel();
+                    Console.WriteLine(receiveMessageTask.Transport + "Receive message task faulted for connection");
+                    Console.WriteLine(receiveMessageTask.Task.Exception);
+                    ReceiveMessageTasks.RemoveAt(i);
                 }
-            }
 
-            for (int i = SendMessageAwaiters.Count - 1; i >= 0; i--)
-            {
-                var awaiter = SendMessageAwaiters[i];
-                if (awaiter.Task.IsFaulted)
+                if (receiveMessageTask.Task.IsCanceled)
                 {
-                    Console.WriteLine(awaiter.Task.Exception);
-                    SendMessageAwaiters.RemoveAt(i);
-                }
-                if (awaiter.Task.IsCompletedSuccessfully)
-                {
-                    SendMessageAwaiters.RemoveAt(i);
+                    Console.WriteLine(receiveMessageTask.Transport + "Receive message task canceled for connection: ");
+                    ReceiveMessageTasks.RemoveAt(i);
                 }
             }
         }

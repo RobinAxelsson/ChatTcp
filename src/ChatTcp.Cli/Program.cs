@@ -1,5 +1,4 @@
 ﻿using ChatTcp.Cli.Shell;
-using ChatTcp.Kernel;
 
 namespace ChatTcp.Cli;
 
@@ -15,6 +14,11 @@ internal class Program
         //Groups
         //Components
 
+        int port = 8888;
+        if(args.Length != 0 && int.TryParse(args[0], out int res))
+        {
+            port = res;
+        }
 
         var cts = new CancellationTokenSource();
         using var networkManager = new NetworkManager();
@@ -23,7 +27,7 @@ internal class Program
         networkManager.OnPacketReceivedFromServer = consoleChat.ReceiveServerPacket;
         consoleChat.SendChatMessage = networkManager.SendChatMessageToServer;
 
-        var serverTask = networkManager.StartAsync(cts);
+        var serverTask = networkManager.StartAsync(cts, port: port);
         var consoleTask = consoleChat.Start(cts.Token);
 
         try
