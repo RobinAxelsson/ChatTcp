@@ -3,7 +3,7 @@
 
 using System.Text.Json;
 
-namespace ChatTcp.Cli.Shell
+namespace ChatTcp.Cli
 {
     [Serializable]
     internal class ShellException : Exception

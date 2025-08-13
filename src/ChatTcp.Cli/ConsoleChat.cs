@@ -1,16 +1,16 @@
 ﻿using System.Collections.Concurrent;
 using System.Reactive.Linq;
 using ChatTcp.Kernel;
-namespace ChatTcp.Cli.Shell;
+namespace ChatTcp.Cli;
 
 internal class ConsoleChat
 {
-    private List<Glyph> _prompt = new();
+    private List<Drawable> _prompt = new();
     private int _promptRow = 3;
     private int _nextChatRow = 0;
     private const string PROMPT_PREFIX = "Chat>";
     private const int PROMPT_JUMP = 5;
-    private string? _token;
+
     private ConcurrentQueue<ChatMessageDto> _incomingChatMessageQueue = new();
     public Action<ChatMessageDto>? SendChatMessage { private get; set; }
     public Func<JoinChatDto, string>? SendTokenRequest { private get; set; }
@@ -39,7 +39,7 @@ internal class ConsoleChat
         //string? alias = null;
         //while (string.IsNullOrWhiteSpace(_token))
         //{
-        //    Console.Write("Enter alias: ");
+        //    Console.WriteLine("Enter alias: ");
         //    alias = Console.ReadLine()?.Trim();
 
         //    if(alias != null)
@@ -171,7 +171,7 @@ internal class ConsoleChat
                 }
                 if (key.Key == ConsoleKey.Enter)
                 {
-                    _prompt.Add(new Glyph(Console.CursorLeft, Console.CursorTop, '\n'));
+                    _prompt.Add(new Drawable(Console.CursorLeft, Console.CursorTop, '\n'));
                     Console.CursorLeft = 0;
                     Console.CursorTop++;
                     continue;
@@ -204,7 +204,7 @@ internal class ConsoleChat
                 }
 
                 Console.Write(key.KeyChar);
-                _prompt.Add(new Glyph(Console.CursorLeft, Console.CursorTop, key.KeyChar));
+                _prompt.Add(new Drawable(Console.CursorLeft, Console.CursorTop, key.KeyChar));
             }
         }
 

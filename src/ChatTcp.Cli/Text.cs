@@ -3,7 +3,7 @@
 public static class Text
 {
     public static string CodeComment = @"//var cts = new CancellationTokenSource();
-        //using var networkManager = new NetworkManager();
+        //using var networkManager = new NetworkView();
         //var consoleChat = new ConsoleChat();
 
         //networkManager.OnPacketReceivedFromServer = consoleChat.ReceiveServerPacket;

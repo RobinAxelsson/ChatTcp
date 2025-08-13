@@ -1,5 +1,6 @@
-﻿using System.Net;
-using ChatTcp.Cli.Shell;
+﻿using System.Collections.Concurrent;
+using System.Text;
+using System.Threading.Channels;
 using ChatTcp.Kernel;
 using ChatTcp.Kernel.Resources;
 
@@ -7,139 +8,209 @@ namespace ChatTcp.Cli;
 
 internal class NetworkSystem
 {
-    private readonly ScreenViewModel _networkScreen;
-    public List<Listener> Listeners = new();
-    public List<TcpClientTask> AcceptTcpClientTasks = new();
-    public List<Connection> Connections = new();
-    public List<SendMessageTask> SendMessageTasks = new();
-    public List<ReceiveMessageTask> ReceiveMessageTasks = new();
+    private StringBuilder _memory = new StringBuilder();
+    private List<Listener> _listeners { get; }
+    private List<Connection> _connections { get; } = new();
+    private readonly ConcurrentDictionary<Connection, Channel<object>> _outbound = new();
+    private readonly ConcurrentDictionary<Connection, Task> _receiveLoops = new();
+    private readonly ConsoleWriter _consoleWriter = ConsoleWriter.Instance;
 
-    public NetworkSystem(ScreenViewModel networkScreen)
+    // Top-level tasks
+    private readonly List<Task> _acceptLoops = new();
+
+    public NetworkSystem(List<Listener> listeners)
     {
-        _networkScreen = networkScreen;
+        _listeners = listeners;
     }
 
-    public void Start(CancellationToken token)
+    private void WriteLine(string text)
     {
-        var listeners = new List<Listener>
-        {
-            new(IPAddress.Loopback, 8888),
-            new(IPAddress.Loopback, 8889)
-        };
+        _memory.Append(text);
+        _consoleWriter.WriteText(text);
+    }
 
-        for (int i = listeners.Count() - 1; i >= 0; i--)
+    /// <summary>
+    /// Starts listeners and runs accept/receive/send loops until <paramref name="token"/> is canceled.
+    /// Completes when all loops have exited.
+    /// </summary>
+    public async Task StartAsync(CancellationToken token)
+    {
+        foreach (var listener in _listeners)
         {
-            var listener = listeners[i];
             if (listener.State == ListenerState.Created)
             {
-                _networkScreen.AppendLine($"{listener} created");
+                WriteLine($"{listener} created");
                 listener.Start();
-                _networkScreen.AppendLine($"{listener} started");
+                WriteLine($"{listener} started");
             }
-            else if (listener.State == ListenerState.Listening)
+            else if (listener.State != ListenerState.Listening)
             {
-                int acceptOpsCount = AcceptTcpClientTasks.Where(x => x.Listener == listener).Count();
-                for (int j = 0; j < listener.ReceiversMax; j++)
+                throw new InvalidStateException("State not implemented: " + listener.State);
+            }
+
+            _acceptLoops.Add(RunAcceptLoopAsync(listener, token));
+        }
+
+
+        // Wait here until canceled (or a fatal error stops all loops)
+        await Task.WhenAll(_acceptLoops).ConfigureAwait(false);
+    }
+
+    private async Task RunAcceptLoopAsync(Listener listener, CancellationToken ct)
+    {
+        // If you want to cap concurrent connections per listener, uncomment this gate
+        // var gate = new SemaphoreSlim(listener.ReceiversMax);
+
+        while (!ct.IsCancellationRequested)
+        {
+            try
+            {
+                // await gate.WaitAsync(ct); // if using the gate
+                var tcpClient = await listener.Socket.AcceptTcpClientAsync(ct).ConfigureAwait(false);
+                var conn = new Connection(tcpClient);
+
+                lock (_connections) _connections.Add(conn);
+                WriteLine($"{conn} created");
+
+                // Create per-connection outbound queue and start its send loop
+                var channel = Channel.CreateUnbounded<object>(
+                    new UnboundedChannelOptions { SingleReader = true, SingleWriter = false, AllowSynchronousContinuations = true });
+                _outbound[conn] = channel;
+                _ = RunSendLoopAsync(conn, channel.Reader, ct);
+
+                await channel.Writer.WriteAsync(
+                    new ChatMessageDto(listener.ToString(), "Established connection"), ct).ConfigureAwait(false);
+
+                // Start the receive loop
+                _receiveLoops[conn] = RunReceiveLoopAsync(conn, /*onClosed:*/ () =>
                 {
-                    if (acceptOpsCount + j < listener.ReceiversMax)
+                    // gate.Release(); // if using the gate
+                }, ct);
+            }
+            catch (OperationCanceledException)
+            {
+                break;
+            }
+            catch (Exception ex)
+            {
+                WriteLine($"{listener} accept failed: {ex}");
+                // brief backoff to avoid a tight error loop
+                try { await Task.Delay(250, ct).ConfigureAwait(false); } catch { }
+            }
+        }
+    }
+
+    private async Task RunSendLoopAsync(Connection conn, ChannelReader<object> reader, CancellationToken ct)
+    {
+        try
+        {
+            while (await reader.WaitToReadAsync(ct).ConfigureAwait(false))
+            {
+                while (reader.TryRead(out var msg))
+                {
+                    try
                     {
-                        AcceptTcpClientTasks.Add(new TcpClientTask(listener, listener.Socket.AcceptTcpClientAsync(token)));
-                        _networkScreen.AppendLine(listener + " accept tcp client task created");
+                        switch (msg)
+                        {
+                            case ChatMessageDto chat:
+                                await PacketStream.WritePacketAsync(chat, conn.NetworkStream, ct).ConfigureAwait(false);
+                                WriteLine($"{conn} sent {chat}");
+                                break;
+
+                            default:
+                                WriteLine($"{conn} unknown outbound message type: {msg?.GetType().Name}");
+                                break;
+                        }
+                    }
+                    catch (OperationCanceledException) { throw; }
+                    catch (Exception ex)
+                    {
+                        WriteLine($"{conn} send faulted: {ex}");
+                        throw; // fail the loop -> connection will be closed
                     }
                 }
             }
-            else
-            {
-                throw new InvalidStateException("State not implimented: " + listener.State);
-            }
         }
-
-        for (int i = AcceptTcpClientTasks.Count - 1; i >= 0; i--)
+        catch (OperationCanceledException) { }
+        catch (Exception ex)
         {
-            var acceptTcpClientTask = AcceptTcpClientTasks[i];
-
-            if (acceptTcpClientTask.Task.IsCompletedSuccessfully)
-            {
-                var connection = new Connection(acceptTcpClientTask.Task.Result);
-                Connections.Add(connection);
-                _networkScreen.AppendLine($"{connection} created");
-                AcceptTcpClientTasks.RemoveAt(i);
-
-                SendMessageTasks.Add(new SendMessageTask(connection, PacketStream.WritePacketAsync(new ChatMessageDto(acceptTcpClientTask.Listener.ToString(), $"Established connection"), connection.NetworkStream, token)));
-            }
-
-            if (acceptTcpClientTask.Task.IsFaulted)
-            {
-                _networkScreen.AppendLine(acceptTcpClientTask.Listener + " faulted accept tcp client task");
-                _networkScreen.AppendLine(acceptTcpClientTask.Task.AsTask().Exception?.ToString());
-                AcceptTcpClientTasks.RemoveAt(i);
-            }
-
-            if (acceptTcpClientTask.Task.IsCanceled)
-            {
-                _networkScreen.AppendLine(acceptTcpClientTask.Listener + " canceled accept tcp client task");
-                AcceptTcpClientTasks.RemoveAt(i);
-            }
+            WriteLine($"{conn} send loop terminating: {ex}");
         }
-
-        for (int i = Connections.Count - 1; i >= 0; i--)
+        finally
         {
-            var conn = Connections[i];
-            if (!ReceiveMessageTasks.Any(x => x.Transport == conn))
-            {
-                ReceiveMessageTasks.Add(new ReceiveMessageTask(conn, PacketStream.ReadPacketAsync(conn.NetworkStream, token)));
-                _networkScreen.AppendLine(conn + " waiting on packet ");
-            }
+            await CloseConnectionAsync(conn).ConfigureAwait(false);
         }
+    }
 
-        for (int i = ReceiveMessageTasks.Count - 1; i >= 0; i--)
+    private async Task RunReceiveLoopAsync(Connection conn, Action onClosed, CancellationToken ct)
+    {
+        try
         {
-            var receiveMessageTask = ReceiveMessageTasks[i];
-
-            if (receiveMessageTask.Task.IsCompletedSuccessfully)
+            while (!ct.IsCancellationRequested)
             {
-                var packetDto = receiveMessageTask.Task.Result;
-                _networkScreen.AppendLine(receiveMessageTask.Transport + " received " + packetDto.GetType().Name + " " + packetDto.Id);
+                var packetDto = await PacketStream.ReadPacketAsync(conn.NetworkStream, ct).ConfigureAwait(false);
+                WriteLine($"{conn} received {packetDto.GetType().Name} {packetDto.Id}");
 
                 switch (packetDto)
                 {
                     case ChatMessageDto chat:
-                        for (int j = Connections.Count - 1; j >= 0; j--)
-                        {
-                            var conn = Connections[j];
-                            if (conn == receiveMessageTask.Transport)
-                                continue;
-
-                            SendMessageTasks.Add(new SendMessageTask(conn, PacketStream.WritePacketAsync(chat, conn.NetworkStream, token)));
-                            _networkScreen.AppendLine($"{conn} create send message task {chat}");
-                        }
+                        await BroadcastAsync(conn, chat, ct).ConfigureAwait(false);
                         break;
 
                     case JoinChatDto joinChat:
-                        _networkScreen.AppendLine($"{joinChat.Id} wants to join chat");
+                        WriteLine($"{joinChat.Id} wants to join chat");
                         break;
 
                     default:
-                        _networkScreen.AppendLine(receiveMessageTask.Transport + " invalid packet type received");
-                        AcceptTcpClientTasks.RemoveAt(i);
-                        break;
+                        WriteLine($"{conn} invalid packet type received");
+                        // optional: close connection on invalid input
+                        return;
                 }
-
-                ReceiveMessageTasks.RemoveAt(i);
-            }
-
-            if (receiveMessageTask.Task.IsFaulted)
-            {
-                _networkScreen.AppendLine(receiveMessageTask.Transport + "Receive message task faulted for connection");
-                _networkScreen.AppendLine(receiveMessageTask.Task.Exception.ToString());
-                ReceiveMessageTasks.RemoveAt(i);
-            }
-
-            if (receiveMessageTask.Task.IsCanceled)
-            {
-                _networkScreen.AppendLine(receiveMessageTask.Transport + "Receive message task canceled for connection: ");
-                ReceiveMessageTasks.RemoveAt(i);
             }
         }
+        catch (OperationCanceledException) { }
+        catch (Exception ex)
+        {
+            WriteLine($"{conn} receive loop faulted: {ex}");
+        }
+        finally
+        {
+            try { onClosed(); } catch { }
+            await CloseConnectionAsync(conn).ConfigureAwait(false);
+        }
+    }
+
+    private async Task BroadcastAsync(Connection from, ChatMessageDto chat, CancellationToken ct)
+    {
+        foreach (var kvp in _outbound)
+        {
+            var conn = kvp.Key;
+            if (conn == from) continue;
+
+            var writer = kvp.Value.Writer;
+            if (!writer.TryWrite(chat))
+            {
+                try { await writer.WriteAsync(chat, ct).ConfigureAwait(false); }
+                catch (ChannelClosedException) { /* connection is closing */ }
+            }
+            WriteLine($"{conn} queued send {chat}");
+        }
+    }
+
+    private async Task CloseConnectionAsync(Connection conn)
+    {
+        if (_outbound.TryRemove(conn, out var ch))
+        {
+            try { ch.Writer.TryComplete(); } catch { }
+        }
+
+        lock (_connections) _connections.Remove(conn);
+
+        WriteLine(conn + " removed");
+
+        try { conn.Dispose(); } catch { }
+
+        // await anything connection-specific if needed
+        await Task.CompletedTask;
     }
 }
