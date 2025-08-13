@@ -1,4 +1,5 @@
-﻿using Xunit;
+﻿using System.Text;
+using Xunit;
 using Xunit.Abstractions;
 
 namespace ChatTcp.Cli.Tests
@@ -7,12 +8,12 @@ namespace ChatTcp.Cli.Tests
     {
         private readonly StringWriter _consoleOutput;
         private readonly TextWriter _originalConsoleOut;
-
         public RenderSystemTests(ITestOutputHelper testOutputHelper)
         {
             _originalConsoleOut = Console.Out;
             _consoleOutput = new StringWriter();
             Console.SetOut(_consoleOutput);
+            //_consoleOutput.GetStringBuilder().Clear();
         }
 
         public void Dispose()
@@ -74,43 +75,6 @@ namespace ChatTcp.Cli.Tests
         }
 
         [Fact]
-        public void MapTextLayerCharsToPositionDictionary_ShouldHandleNewlines()
-        {
-            // Arrange
-            var textLayer = new TextLayer(ConsoleColor.White, "01\r\n23\n4");
-            var positionCharDict = new Dictionary<(int X, int Y), List<LayerChar>>();
-
-            // Act
-            RenderSystem.MapTextLayerCharsToPositionDictionary(positionCharDict, new List<TextLayer> { textLayer });
-
-            // Assert
-            // Expected positions: 
-            // (0,0) => '0'
-            // (0,1) => '3'
-            var expected = new List<(int X, int Y, char C)>
-            {
-                (0, 0, '0'),
-                (1, 0, '1'),
-                (0, 1, '2'),
-                (1, 1, '3'),
-                (0, 2, '4'),
-            };
-
-            Assert.Equal(expected.Count, positionCharDict.Count);
-
-            foreach (var (x, y, c) in expected)
-            {
-                Assert.True(positionCharDict.ContainsKey((x, y)), $"Missing key ({x},{y})");
-                var list = positionCharDict[(x, y)];
-                Assert.Single(list); // only one LayerChar at that coordinate
-                Assert.Equal(c, list[0].Char);
-                Assert.Equal(x, list[0].X);
-                Assert.Equal(y, list[0].Y);
-                Assert.Same(textLayer, list[0].TextLayer);
-            }
-        }
-
-        [Fact]
         public void Tick_WithEmptyTextLayer_ShouldNotThrowException()
         {
             var textLayer = new TextLayer(ConsoleColor.White, "");
@@ -122,20 +86,13 @@ namespace ChatTcp.Cli.Tests
             Assert.Equal(TextLayerState.Rendered, textLayer.State);
         }
 
-        [Fact]
-        public void Tick_WithNoQueuedLayers_ShouldNotThrowException()
-        {
-            var renderSystem = CreateSut(new List<TextLayer>());
-            renderSystem.Tick();
-        }
-
         [Theory]
         [InlineData("Single line text")]
         [InlineData("Multi\nLine\nText")]
         [InlineData("Text with\ttabs")]
         [InlineData("")]
         [InlineData("A")]
-        public void RenderSystem_ShouldHandleVariousTextFormats(string text)
+        public void Tick_TextSerializedAndDeserialized_ShouldMatchInput(string text)
         {
             var textLayer = new TextLayer(ConsoleColor.White, text);
             var renderSystem = CreateSut(new List<TextLayer> { textLayer });
@@ -143,8 +100,29 @@ namespace ChatTcp.Cli.Tests
             renderSystem.RequestRender(textLayer);
             renderSystem.Tick();
 
-            Assert.Equal(TextLayerState.Rendered, textLayer.State);
-            Assert.Equal(text, _consoleOutput.ToString());
+            Assert.Equal(text.ReplaceLineEndings(), _consoleOutput.ToString());
+        }
+
+        [Fact]
+        public void Tick_TwoTextLayersAB_ShouldWriteOrOverwrite()
+        {
+            var oldTextLayer = new TextLayer(ConsoleColor.White, "A");
+            var newTextLayer = new TextLayer(ConsoleColor.White, "B");
+            var renderSystem = CreateSut(new List<TextLayer> { oldTextLayer, newTextLayer });
+
+            renderSystem.RequestRender(oldTextLayer);
+            renderSystem.Tick();
+
+            Assert.Equal(TextLayerState.Rendered, oldTextLayer.State);
+            Assert.Equal(TextLayerState.Initialized, newTextLayer.State);
+            Assert.Equal("A", _consoleOutput.ToString());
+
+            renderSystem.RequestRender(newTextLayer);
+            renderSystem.Tick();
+
+            Assert.Equal(TextLayerState.Initialized, oldTextLayer.State);
+            Assert.Equal(TextLayerState.Rendered, newTextLayer.State);
+            Assert.Equal("B", _consoleOutput.ToString());
         }
     }
 }

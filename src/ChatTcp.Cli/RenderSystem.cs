@@ -10,26 +10,20 @@ internal class RenderSystem
     private ConcurrentQueue<TextLayer> _toRenderQueue = new();
     private List<TextLayer> _textLayers;
     private readonly ConsoleAdapter _consoleAdapter;
-    private Dictionary<(int X, int Y), List<LayerChar>> _positionCharDict = new();
     private StringBuilder _sb = new StringBuilder();
     private readonly object lockObject = new object();
     private RenderSystemState _state;
 
-    public RenderSystem(): this(new List<TextLayer>(), new ConsoleAdapter())
-    {
-    }
-
     public RenderSystem(List<TextLayer> textLayers)
-    : this(textLayers, new ConsoleAdapter())
+    : this(textLayers, ConsoleAdapter.Instance)
     {
     }
 
-    // For tests
+    // Constructor for unit testing
     internal RenderSystem(List<TextLayer> textLayers, ConsoleAdapter consoleAdapter)
     {
         _textLayers = textLayers;
         _consoleAdapter = consoleAdapter;
-        MapTextLayerCharsToPositionDictionary(_positionCharDict, _textLayers);
     }
 
     public void RequestClear()
@@ -62,145 +56,46 @@ internal class RenderSystem
                 _state = RenderSystemState.Render;
             }
 
-            if (_toRenderQueue.TryPeek(out TextLayer? textLayerToRender))
+            if (_state == RenderSystemState.Render && _toRenderQueue.TryPeek(out TextLayer? textLayerToRender))
             {
+                var renderedLayerOrDefault = _textLayers.FirstOrDefault(x => x.State == TextLayerState.Rendered);
 
-                _sb.Clear();
+                SyncStringBuilder(renderedLayerOrDefault, textLayerToRender, _sb);
 
-                AppendLayerToRenderToStringBuilder(_positionCharDict, textLayerToRender, _sb);
+                WriteToConsoleOut(textLayerToRender, _sb, _consoleAdapter);
 
-                RenderToConsole(_sb, textLayerToRender.ForegroundColor);
+                textLayerToRender.State = TextLayerState.Rendered;
 
-                UpdateLayerStates(textLayerToRender, _textLayers, _toRenderQueue);
-            }
-        }
-    }
+                if(renderedLayerOrDefault != null)
+                    renderedLayerOrDefault.State = TextLayerState.Initialized;
 
-    //internal for testing
-    internal static void MapTextLayerCharsToPositionDictionary(Dictionary<(int X, int Y), List<LayerChar>> positionCharDict, List<TextLayer> textLayers)
-    {
-        foreach (var textLayer in textLayers)
-        {
-            int y = 0, x = 0;
-
-            foreach (var c in textLayer.Text)
-            {
-                // Handle control characters up front
-                if (c == '\r') { continue; } // ignore CR (for CRLF)
-                if (c == '\n') { y++; x = 0; continue; }
-
-                if (!positionCharDict.TryGetValue((x, y), out var list))
+                if(!_toRenderQueue.TryDequeue(out var _))
                 {
-                    list = new List<LayerChar>();
-                    positionCharDict[(x, y)] = list;
-                }
-
-                list.Add(new LayerChar(textLayer, c, x, y));
-                x++;
-            }
-        }
-    }
-
-    private static void UpdateLayerStates(TextLayer textLayerJustRendered, List<TextLayer> textLayers, ConcurrentQueue<TextLayer> toRenderQueue)
-    {
-        foreach (var layer in textLayers.Where(x => x.State == TextLayerState.Rendered))
-        {
-            layer.State = TextLayerState.Initialized;
-        }
-
-        textLayerJustRendered.State = TextLayerState.Rendered;
-
-        if (toRenderQueue.TryDequeue(out var dequeuedLayer))
-        {
-            if (dequeuedLayer != textLayerJustRendered)
-            {
-                throw new InvalidStateException(new { dequeuedLayer, textLayerJustRendered });
-            }
-        }
-        else
-        {
-            throw new InvalidStateException(toRenderQueue);
-        }
-    }
-
-    private static void AppendLayerToRenderToStringBuilder(Dictionary<(int X, int Y), List<LayerChar>> positionCharDict, TextLayer textLayerToRender, StringBuilder sb)
-    {
-        int maxX = positionCharDict.Max(x => x.Key.X);
-        int maxY = positionCharDict.Max(y => y.Key.Y);
-
-        //TODO get number of rows for both
-
-        //TODO get length of each row for both
-
-        //TODO use the numbers to iterate exacly
-
-        for (int y = 0; y <= maxY; y++)
-        {
-            //too much logic in this block
-            for (int x = 0; x <= maxX; x++)
-            {
-                if (positionCharDict.TryGetValue((x, y), out var layerCharsAtPosition))
-                {
-                    var toRenderChars = layerCharsAtPosition.Where(x => x.TextLayer == textLayerToRender);
-                    var renderedChars = layerCharsAtPosition.Where(x => x.TextLayer.State == TextLayerState.Rendered);
-
-                    if (toRenderChars.Count() > 1)
-                    {
-                        throw new InvalidStateException(toRenderChars);
-                    }
-
-                    if (renderedChars.Count() > 1)
-                    {
-                        throw new InvalidStateException(renderedChars);
-                    }
-
-                    var toRenderChar = toRenderChars.FirstOrDefault();
-                    var renderedChar = renderedChars.FirstOrDefault();
-
-                    bool noCharExist = renderedChar == default && toRenderChar == default;
-
-                    if (noCharExist)
-                    {
-                        sb.Append(Environment.NewLine);
-                        break;
-                    }
-
-                    bool onlyRenderedCharExist = renderedChar != default && toRenderChar == default;
-
-                    if (onlyRenderedCharExist)
-                    {
-                        sb.Append(' ');
-                        continue;
-                    }
-
-                    bool onlyToRenderCharExist = renderedChar == default && toRenderChar != default;
-
-                    if (onlyToRenderCharExist)
-                    {
-                        sb.Append(toRenderChar!.Char);
-                        continue;
-                    }
-
-                    bool bothCharsExist = renderedChar != default && toRenderChar != default;
-
-                    if (bothCharsExist)
-                    {
-                        sb.Append(renderedChar!.Char);
-                        continue;
-                    }
-
-                    throw new InvalidStateException(new { x, y, layerCharsAtPosition, positionCharDict });
+                    throw new InvalidStateException();
                 }
             }
         }
     }
 
-    private void RenderToConsole(StringBuilder sb, ConsoleColor foregroundColor)
+    private static void SyncStringBuilder(TextLayer? renderedLayer, TextLayer textLayerToRender, StringBuilder sb)
     {
-        Console.ForegroundColor = foregroundColor;
-        _consoleAdapter.SetCursorPosition(0, 0);
-        Console.WriteLine(sb.ToString());
-        _consoleAdapter.SetCursorPosition(0, 0);
+        sb.Clear();
+
+        if (renderedLayer == null)
+        {
+            RenderSystemHelpers.AppendRowsToStringBuilder(textLayerToRender.Rows, sb);
+            return;
+        }
+
+        RenderSystemHelpers.AppendOrOverwriteRowsToStringBuilder(renderedLayer.Rows, textLayerToRender.Rows, sb);
+    }
+
+    private static void WriteToConsoleOut(TextLayer textLayerToRender, StringBuilder sb, ConsoleAdapter consoleAdapter)
+    {
+        Console.ForegroundColor = textLayerToRender.ForegroundColor;
+        consoleAdapter.SetCursorPosition(0, 0);
+        Console.Write(sb.ToString());
+        consoleAdapter.SetCursorPosition(0, 0);
         Console.ResetColor();
     }
 
@@ -217,14 +112,17 @@ internal class RenderSystem
 internal enum RenderSystemState
 {
     Render,
-    Clear
+    Clear,
 }
 
 internal class ConsoleAdapter
 {
+    private static ConsoleAdapter? _instance = null;
     private Action<int, int> _setCursorPosition = Console.SetCursorPosition;
     private Action _clear = Console.Clear;
-    public ConsoleAdapter() { }
+    private ConsoleAdapter() { }
+
+    internal static ConsoleAdapter Instance => _instance ??= new ConsoleAdapter();
 
     //test constructor
     internal ConsoleAdapter(Action<int, int> setCursorPosition, Action clear)
@@ -232,6 +130,7 @@ internal class ConsoleAdapter
         _setCursorPosition = setCursorPosition;
         _clear = clear;
     }
+
     public void SetCursorPosition(int x, int y) => _setCursorPosition?.Invoke(x, y);
     public void Clear() => _clear?.Invoke();
 }
