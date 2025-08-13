@@ -10,10 +10,10 @@ namespace ChatTcp.Cli.Tests
             var layer = new TextLayer(ConsoleColor.White, "AB\nCD");
 
             // Expect 2 rows: ['A','B'] and ['C','D']
-            Assert.NotNull(layer.Rows);
-            Assert.Equal(2, layer.Rows.Count);
-            Assert.Equal(new List<char> { 'A', 'B' }, layer.Rows[0]);
-            Assert.Equal(new List<char> { 'C', 'D' }, layer.Rows[1]);
+            Assert.NotNull(layer.LayerBuffer);
+            Assert.Equal(2, layer.LayerBuffer.Count);
+            Assert.Equal(new List<char> { 'A', 'B' }, layer.LayerBuffer[0]);
+            Assert.Equal(new List<char> { 'C', 'D' }, layer.LayerBuffer[1]);
         }
 
         [Fact]
@@ -21,9 +21,9 @@ namespace ChatTcp.Cli.Tests
         {
             var layer = new TextLayer(ConsoleColor.White, "XYZ");
 
-            Assert.NotNull(layer.Rows);
-            Assert.Single(layer.Rows);
-            Assert.Equal(new List<char> { 'X', 'Y', 'Z' }, layer.Rows[0]);
+            Assert.NotNull(layer.LayerBuffer);
+            Assert.Single(layer.LayerBuffer);
+            Assert.Equal(new List<char> { 'X', 'Y', 'Z' }, layer.LayerBuffer[0]);
         }
 
         [Fact]
@@ -31,10 +31,10 @@ namespace ChatTcp.Cli.Tests
         {
             var layer = new TextLayer(ConsoleColor.White, "");
 
-            Assert.NotNull(layer.Rows);
+            Assert.NotNull(layer.LayerBuffer);
             // Represent one empty row rather than no rows
-            Assert.Single(layer.Rows);
-            Assert.Empty(layer.Rows[0]);
+            Assert.Single(layer.LayerBuffer);
+            Assert.Empty(layer.LayerBuffer[0]);
         }
 
         [Fact]
@@ -42,9 +42,9 @@ namespace ChatTcp.Cli.Tests
         {
             var layer = new TextLayer(ConsoleColor.White, "\n\n");
 
-            Assert.NotNull(layer.Rows);
-            Assert.Equal(3, layer.Rows.Count); // "" , "" , ""
-            Assert.All(layer.Rows, row => Assert.Empty(row));
+            Assert.NotNull(layer.LayerBuffer);
+            Assert.Equal(3, layer.LayerBuffer.Count); // "" , "" , ""
+            Assert.All(layer.LayerBuffer, row => Assert.Empty(row));
         }
     }
 }

@@ -2,13 +2,6 @@
 
 public static class Text
 {
-    public static string NoteAcceptOp =
-@"I kept your readonly on fields in AcceptOp. That means they must be assigned in the constructor and cannot be reassigned later.
-
-In ReceiveOp and SendOp, you had required initializers — those are now covered by the constructor, so required is not needed anymore unless you still want object initializer syntax as an option.
-
-Since these are record structs, your constructor coexists with the compiler-generated value equality and ToString.";
-
     public static string CodeComment = @"//var cts = new CancellationTokenSource();
         //using var networkManager = new NetworkManager();
         //var consoleChat = new ConsoleChat();
@@ -63,6 +56,13 @@ sixty-one, sixty-two, sixty-three, sixty-four, sixty-five, sixty-six, sixty-seve
 seventy-one, seventy-two, seventy-three, seventy-four, seventy-five, seventy-six, seventy-seven, seventy-eight, seventy-nine, eighty,
 eighty-one, eighty-two, eighty-three, eighty-four, eighty-five, eighty-six, eighty-seven, eighty-eight, eighty-nine, ninety,
 ninety-one, ninety-two, ninety-three, ninety-four, ninety-five, ninety-six, ninety-seven, ninety-eight, ninety-nine, one hundred.";
+
+    public static string NoteAcceptOp =
+@"I kept your readonly on fields in AcceptOp. That means they must be assigned in the constructor and cannot be reassigned later.
+
+In ReceiveOp and SendOp, you had required initializers — those are now covered by the constructor, so required is not needed anymore unless you still want object initializer syntax as an option.
+
+Since these are record structs, your constructor coexists with the compiler-generated value equality and ToString.";
 
     public static readonly string AsciiTable =
 @"<NUL> 0 0x00 NUL (null)

@@ -5,14 +5,27 @@ using ChatTcp.Cli.Shell;
 
 namespace ChatTcp.Cli;
 
+public enum ApplicationState
+{
+    Network,
+    Chat,
+    Command
+}
+
+internal class Renderer
+{
+}
+
 internal class RenderSystem
 {
     private ConcurrentQueue<TextLayer> _toRenderQueue = new();
     private List<TextLayer> _textLayers;
     private readonly ConsoleAdapter _consoleAdapter;
-    private StringBuilder _sb = new StringBuilder();
     private readonly object lockObject = new object();
     private RenderSystemState _state;
+
+    private List<(int row, string text)> LineBuffer = new(); //keep track of written lines
+    private StringBuilder _sb = new StringBuilder();
 
     public RenderSystem(List<TextLayer> textLayers)
     : this(textLayers, ConsoleAdapter.Instance)
@@ -43,6 +56,7 @@ internal class RenderSystem
             if (_state == RenderSystemState.Clear)
             {
                 _consoleAdapter.Clear();
+                _sb.Clear();
                 _toRenderQueue.Clear();
 
                 for (int i = _textLayers.Count - 1; i >= 0; i--)
@@ -60,16 +74,23 @@ internal class RenderSystem
             {
                 var renderedLayerOrDefault = _textLayers.FirstOrDefault(x => x.State == TextLayerState.Rendered);
 
-                SyncStringBuilder(renderedLayerOrDefault, textLayerToRender, _sb);
+                bool alreadyRendered = renderedLayerOrDefault != null && textLayerToRender == renderedLayerOrDefault;
 
-                WriteToConsoleOut(textLayerToRender, _sb, _consoleAdapter);
+                if(!alreadyRendered)
+                {
+                    _consoleAdapter.Clear();
+                    _sb.Clear();
+
+                    RenderSystemHelpers.AppendRowsToStringBuilder(textLayerToRender.LayerBuffer, _sb);
+                    WriteToConsoleOut(textLayerToRender, _sb, _consoleAdapter);
+                }
 
                 textLayerToRender.State = TextLayerState.Rendered;
 
-                if(renderedLayerOrDefault != null)
+                if (renderedLayerOrDefault != null)
                     renderedLayerOrDefault.State = TextLayerState.Initialized;
 
-                if(!_toRenderQueue.TryDequeue(out var _))
+                if (!_toRenderQueue.TryDequeue(out var _))
                 {
                     throw new InvalidStateException();
                 }
@@ -77,21 +98,10 @@ internal class RenderSystem
         }
     }
 
-    private static void SyncStringBuilder(TextLayer? renderedLayer, TextLayer textLayerToRender, StringBuilder sb)
-    {
-        sb.Clear();
-
-        if (renderedLayer == null)
-        {
-            RenderSystemHelpers.AppendRowsToStringBuilder(textLayerToRender.Rows, sb);
-            return;
-        }
-
-        RenderSystemHelpers.AppendOrOverwriteRowsToStringBuilder(renderedLayer.Rows, textLayerToRender.Rows, sb);
-    }
-
     private static void WriteToConsoleOut(TextLayer textLayerToRender, StringBuilder sb, ConsoleAdapter consoleAdapter)
     {
+        Console.OutputEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
+        Console.InputEncoding = Encoding.UTF8;
         Console.ForegroundColor = textLayerToRender.ForegroundColor;
         consoleAdapter.SetCursorPosition(0, 0);
         Console.Write(sb.ToString());

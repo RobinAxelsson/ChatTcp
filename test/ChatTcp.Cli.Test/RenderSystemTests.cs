@@ -1,5 +1,4 @@
-﻿using System.Text;
-using Xunit;
+﻿using Xunit;
 using Xunit.Abstractions;
 
 namespace ChatTcp.Cli.Tests
@@ -122,7 +121,99 @@ namespace ChatTcp.Cli.Tests
 
             Assert.Equal(TextLayerState.Initialized, oldTextLayer.State);
             Assert.Equal(TextLayerState.Rendered, newTextLayer.State);
-            Assert.Equal("B", _consoleOutput.ToString());
+            Assert.Equal("AB", _consoleOutput.ToString());
+        }
+
+        [Fact]
+        public void Tick_TwoTextLayersABC_ShouldWriteOrOverwrite()
+        {
+            var oldTextLayer = new TextLayer(ConsoleColor.White, "A");
+            var newTextLayer = new TextLayer(ConsoleColor.White, "BC");
+            var renderSystem = CreateSut(new List<TextLayer> { oldTextLayer, newTextLayer });
+
+            renderSystem.RequestRender(oldTextLayer);
+            renderSystem.Tick();
+
+            Assert.Equal(TextLayerState.Rendered, oldTextLayer.State);
+            Assert.Equal(TextLayerState.Initialized, newTextLayer.State);
+            Assert.Equal("A", _consoleOutput.ToString());
+
+            renderSystem.RequestRender(newTextLayer);
+            renderSystem.Tick();
+
+            Assert.Equal(TextLayerState.Initialized, oldTextLayer.State);
+            Assert.Equal(TextLayerState.Rendered, newTextLayer.State);
+            Assert.Equal("ABC", _consoleOutput.ToString());
+        }
+
+        [Fact]
+        public void Tick_TwoTextLayersABCD_ShouldWriteOrOverwrite()
+        {
+            var oldTextLayer = new TextLayer(ConsoleColor.White, "ABC");
+            var newTextLayer = new TextLayer(ConsoleColor.White, "D");
+            var renderSystem = CreateSut(new List<TextLayer> { oldTextLayer, newTextLayer });
+
+            renderSystem.RequestRender(oldTextLayer);
+            renderSystem.Tick();
+
+            renderSystem.RequestRender(newTextLayer);
+            renderSystem.Tick();
+
+            Assert.Equal("ABCD", _consoleOutput.ToString());
+        }
+
+        [Fact]
+        public void Tick_TwoTextLayersNewline_ShouldWriteOrOverwrite()
+        {
+            var oldTextLayer = new TextLayer(ConsoleColor.White, "A\r\nB");
+            var newTextLayer = new TextLayer(ConsoleColor.White, "D\r\nC");
+            var renderSystem = CreateSut(new List<TextLayer> { oldTextLayer, newTextLayer });
+
+            renderSystem.RequestRender(oldTextLayer);
+            renderSystem.Tick();
+
+            renderSystem.RequestRender(newTextLayer);
+            renderSystem.Tick();
+
+            Assert.Equal(TextLayerState.Initialized, oldTextLayer.State);
+            Assert.Equal(TextLayerState.Rendered, newTextLayer.State);
+            Assert.Equal("A\r\nBD\r\nC", _consoleOutput.ToString());
+        }
+
+        [Fact]
+        public void Tick_TwoTextLayersNewlineLoreIpsum_ShouldWriteOrOverwrite()
+        {
+            var oldTextLayer = new TextLayer(ConsoleColor.White, "\r\n\r\n");
+            var newTextLayer = new TextLayer(ConsoleColor.White, "\r\n");
+            var renderSystem = CreateSut(new List<TextLayer> { oldTextLayer, newTextLayer });
+
+            renderSystem.RequestRender(oldTextLayer);
+            renderSystem.Tick();
+
+            renderSystem.RequestRender(newTextLayer);
+            renderSystem.Tick();
+
+            Assert.Equal("\r\n\r\n\r\n", _consoleOutput.ToString());
+        }
+
+        [Fact]
+        public void Tick_ThreeTextLayersNewlineLoreIpsum_ShouldWriteOrOverwrite()
+        {
+            var layer1 = new TextLayer(ConsoleColor.White, "AB");
+            var layer2 = new TextLayer(ConsoleColor.White, "B");
+            var layer3 = new TextLayer(ConsoleColor.White, "C");
+            var renderSystem = CreateSut(new List<TextLayer> { layer1, layer2, layer3 });
+
+            renderSystem.RequestRender(layer1);
+            renderSystem.Tick();
+
+            renderSystem.RequestRender(layer2);
+            renderSystem.Tick();
+
+            renderSystem.RequestRender(layer3);
+            renderSystem.Tick();
+
+            Assert.Equal("ABB C", _consoleOutput.ToString());
         }
     }
 }

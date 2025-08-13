@@ -1,6 +1,4 @@
 ﻿
-using System.Text;
-
 namespace ChatTcp.Cli;
 internal static class Program
 {
@@ -13,47 +11,47 @@ internal static class Program
 
         var cts = new CancellationTokenSource();
 
-        var textLayers = new List<TextLayer>
-        {
-            new TextLayer(ConsoleColor.Magenta, Text.LoremIpsum20Lines),
-            new TextLayer(ConsoleColor.DarkRed, Text.AsciiTable),
-            new TextLayer(ConsoleColor.Cyan, Text.CodeComment),
-            new TextLayer(ConsoleColor.Yellow, Text.NoteAcceptOp),
-            new TextLayer(ConsoleColor.White, Text.OneToHundredWords)
-        };
+        var networkScreen = new ScreenViewModel(ConsoleColor.Magenta, "Network log");
+        var chatView = new ScreenViewModel(ConsoleColor.DarkRed, "Chat");
+        var inputField = new ScreenViewModel(ConsoleColor.Yellow, "InputField");
 
-        var renderSystem = new RenderSystem(textLayers);
+        var networkSystem = new NetworkSystem(networkScreen);
+        //networkManager.Start()
 
-        KeyTextLayerDict[ConsoleKey.D1] = textLayers[0];
-        KeyTextLayerDict[ConsoleKey.D2] = textLayers[1];
-        KeyTextLayerDict[ConsoleKey.D3] = textLayers[2];
-        KeyTextLayerDict[ConsoleKey.D4] = textLayers[3];
-        KeyTextLayerDict[ConsoleKey.D5] = textLayers[4];
-
-        var sb = new StringBuilder();
 
         while (!cts.IsCancellationRequested)
         {
             if (Console.KeyAvailable)
             {
-                var keyInfo = Console.ReadKey(true);
-                if (keyInfo.Key == ConsoleKey.Escape)
-                {
-                    cts.Cancel();
-                }
-                if (keyInfo.Key == ConsoleKey.Enter)
-                {
-                    renderSystem.RequestClear();
-                }
-                if (KeyTextLayerDict.TryGetValue(keyInfo.Key, out TextLayer? textLayerValue))
-                {
-                    renderSystem.RequestRender(textLayerValue);
-                }
+                MainControlFlow(cts);
             }
 
-            renderSystem.Tick();
+            //renderSystem.Tick(); Blocking?
         }
 
         Console.WriteLine("Exiting...");
+    }
+
+    private static void MainControlFlow(CancellationTokenSource cts)
+    {
+        var keyInfo = Console.ReadKey(true);
+        if (keyInfo.Key == ConsoleKey.Escape)
+        {
+            cts.Cancel();
+        }
+        if (keyInfo.Key == ConsoleKey.D1 && keyInfo.Modifiers == ConsoleModifiers.Control)
+        {
+            //set network state
+            //request render if new state
+            return;
+        }
+        if (keyInfo.Key == ConsoleKey.D1 && keyInfo.Modifiers == ConsoleModifiers.Control)
+        {
+            //set chatView state
+            //request render if new state
+            return;
+        }
+
+        //send key to application flows
     }
 }

@@ -4,22 +4,20 @@ public class TextLayer
 {
     public TextLayerState State { get; set; }
     public ConsoleColor ForegroundColor { get; set; }
-    internal string Text { get; set; }
-    public List<List<char>> Rows { get; } = new();
+    public List<List<char>> LayerBuffer { get; } = new();
 
     public TextLayer(ConsoleColor foregroundColor, string text)
     {
         ForegroundColor = foregroundColor;
-        Text = text ?? string.Empty;
-        MapTextToRows();
+        MapTextToRows(text, LayerBuffer);
     }
 
-    private void MapTextToRows()
+    private static void MapTextToRows(string text, List<List<char>> layerBuffer)
     {
-        Rows.Clear();
+        layerBuffer.Clear();
 
         // Split into lines on \r\n or \n
-        var lines = Text.Replace("\r", "").Split('\n');
+        var lines = text.Replace("\r", "").Split('\n');
 
         foreach (var line in lines)
         {
@@ -30,7 +28,7 @@ public class TextLayer
                 row.Add(c);
             }
 
-            Rows.Add(row);
+            layerBuffer.Add(row);
         }
     }
 }
