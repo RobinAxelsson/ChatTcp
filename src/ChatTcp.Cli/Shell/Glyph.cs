@@ -1,8 +1,8 @@
 ﻿namespace ChatTcp.Cli.Shell;
 
-public struct Drawable
+public struct Glyph
 {
-    public Drawable(int x, int y, char c)
+    public Glyph(int x, int y, char c)
     {
         X = x;
         Y = y;

@@ -1,43 +1,59 @@
-﻿using ChatTcp.Cli.Shell;
+﻿
+using System.Text;
 
 namespace ChatTcp.Cli;
-
-internal class Program
+internal static class Program
 {
-    private static async Task Main(string[] args)
-    {
-        //Entitiy component system
-        //Actors entity
-        //Connection entity
-        //Chat
-        //Logins
-        //Groups
-        //Components
 
-        int port = 8888;
-        if(args.Length != 0 && int.TryParse(args[0], out int res))
-        {
-            port = res;
-        }
+    public static Dictionary<ConsoleKey, TextLayer> KeyTextLayerDict = new();
+    
+    public static void Main(string[] args)
+    {
+        Console.WriteLine("Started");
 
         var cts = new CancellationTokenSource();
-        using var networkManager = new NetworkManager();
-        var consoleChat = new ConsoleChat();
 
-        networkManager.OnPacketReceivedFromServer = consoleChat.ReceiveServerPacket;
-        consoleChat.SendChatMessage = networkManager.SendChatMessageToServer;
-
-        var serverTask = networkManager.StartAsync(cts, port: port);
-        var consoleTask = consoleChat.Start(cts.Token);
-
-        try
+        var textLayers = new List<TextLayer>
         {
-            await await Task.WhenAny(serverTask, consoleTask);
-        }
-        finally
+            new TextLayer(ConsoleColor.Magenta, Text.LoremIpsum20Lines),
+            new TextLayer(ConsoleColor.DarkRed, Text.AsciiTable),
+            new TextLayer(ConsoleColor.Cyan, Text.CodeComment),
+            new TextLayer(ConsoleColor.Yellow, Text.NoteAcceptOp),
+            new TextLayer(ConsoleColor.White, Text.OneToHundredWords)
+        };
+
+        var renderSystem = new RenderSystem(textLayers);
+
+        KeyTextLayerDict[ConsoleKey.D1] = textLayers[0];
+        KeyTextLayerDict[ConsoleKey.D2] = textLayers[1];
+        KeyTextLayerDict[ConsoleKey.D3] = textLayers[2];
+        KeyTextLayerDict[ConsoleKey.D4] = textLayers[3];
+        KeyTextLayerDict[ConsoleKey.D5] = textLayers[4];
+
+        var sb = new StringBuilder();
+
+        while (!cts.IsCancellationRequested)
         {
-            cts.Cancel();
-            await Task.WhenAll(serverTask, consoleTask);
+            if (Console.KeyAvailable)
+            {
+                var keyInfo = Console.ReadKey(true);
+                if (keyInfo.Key == ConsoleKey.Escape)
+                {
+                    cts.Cancel();
+                }
+                if (keyInfo.Key == ConsoleKey.Enter)
+                {
+                    renderSystem.RequestClear();
+                }
+                if (KeyTextLayerDict.TryGetValue(keyInfo.Key, out TextLayer? textLayerValue))
+                {
+                    renderSystem.RequestRender(textLayerValue);
+                }
+            }
+
+            renderSystem.Tick();
         }
+
+        Console.WriteLine("Exiting...");
     }
 }

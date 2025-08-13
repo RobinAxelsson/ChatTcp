@@ -5,7 +5,7 @@ namespace ChatTcp.Cli.Shell;
 
 internal class ConsoleChat
 {
-    private List<Drawable> _prompt = new();
+    private List<Glyph> _prompt = new();
     private int _promptRow = 3;
     private int _nextChatRow = 0;
     private const string PROMPT_PREFIX = "Chat>";
@@ -171,7 +171,7 @@ internal class ConsoleChat
                 }
                 if (key.Key == ConsoleKey.Enter)
                 {
-                    _prompt.Add(new Drawable(Console.CursorLeft, Console.CursorTop, '\n'));
+                    _prompt.Add(new Glyph(Console.CursorLeft, Console.CursorTop, '\n'));
                     Console.CursorLeft = 0;
                     Console.CursorTop++;
                     continue;
@@ -204,7 +204,7 @@ internal class ConsoleChat
                 }
 
                 Console.Write(key.KeyChar);
-                _prompt.Add(new Drawable(Console.CursorLeft, Console.CursorTop, key.KeyChar));
+                _prompt.Add(new Glyph(Console.CursorLeft, Console.CursorTop, key.KeyChar));
             }
         }
 

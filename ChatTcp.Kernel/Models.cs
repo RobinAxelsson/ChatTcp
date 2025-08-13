@@ -44,7 +44,7 @@ public readonly record struct Entity
     private readonly int _id;
     public Entity()
     {
-        _id = IdFactory.Get();
+        _id = IdFactory.Create();
     }
     public int Id => _id;
     public static Entity New => new Entity();
@@ -53,7 +53,7 @@ public readonly record struct Entity
 public static class IdFactory
 {
     private static int nextId = 0;
-    public static int Get() => Interlocked.Increment(ref nextId);
+    public static int Create() => Interlocked.Increment(ref nextId);
 }
 
 public abstract class WirePacketDto
