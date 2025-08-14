@@ -1,17 +1,17 @@
 ﻿using System.Text;
+
 namespace ChatTcp.Cli.Shell;
 
 internal class Prompt
 {
     private const string PROMPT_PREFIX = "Chat>";
     private readonly ConsoleWriter _consoleWriter;
-    private StringBuilder _stringBuffer;
+    private readonly StringBuilder _stringBuffer = new();
     private int _currentLineIndex;
 
     public Prompt(ConsoleWriter consoleWriter)
     {
         _consoleWriter = consoleWriter;
-        _stringBuffer = new StringBuilder();
         _stringBuffer.Append(PROMPT_PREFIX);
     }
 
@@ -19,51 +19,49 @@ internal class Prompt
     {
         get
         {
-            int lineCount = 1;
+            int n = 1;
             foreach (var chunk in _stringBuffer.GetChunks())
-            {
                 foreach (var c in chunk.Span)
-                {
-                    if (c == '\n')
-                    {
-                        lineCount++;
-                    }
-                }
-            }
-            return lineCount;
+                    if (c == '\n') n++;
+            return n;
         }
     }
 
     public int CurrentLineIndex
     {
-        get { return _currentLineIndex; }
-        set { _currentLineIndex = value; }
+        get => _currentLineIndex;
+        set => _currentLineIndex = value;
     }
+
+    public string Text =>
+        _stringBuffer.Length > PROMPT_PREFIX.Length
+            ? _stringBuffer.ToString(PROMPT_PREFIX.Length, _stringBuffer.Length - PROMPT_PREFIX.Length)
+            : string.Empty;
 
     public void Jump(int steps)
     {
         _consoleWriter.ClearLines(CurrentLineIndex, LineCount);
-
-        int newLineIndex = CurrentLineIndex + steps;
-        _consoleWriter.WriteText(_stringBuffer.ToString(), newLineIndex);
-
-        CurrentLineIndex = newLineIndex;
+        var newIndex = CurrentLineIndex + steps;
+        _consoleWriter.WriteText(_stringBuffer.ToString(), newIndex);
+        CurrentLineIndex = newIndex;
     }
 
-    public void AppendChar(char ch)
+    public void AppendChar(char ch) => _stringBuffer.Append(ch);
+
+    public void Backspace()
     {
-        _stringBuffer.Append(ch);
+        if (_stringBuffer.Length > PROMPT_PREFIX.Length)
+            _stringBuffer.Length -= 1;
     }
 
-    public void Hide()
+    public void Clear()
     {
-        _consoleWriter.ClearLines(CurrentLineIndex, LineCount);
+        _stringBuffer.Length = PROMPT_PREFIX.Length;
     }
 
-    public void Render()
-    {
-        _consoleWriter.WriteText(_stringBuffer.ToString(), CurrentLineIndex);
-    }
+    public void Hide() => _consoleWriter.ClearLines(CurrentLineIndex, LineCount);
 
-    public override string ToString() => "prompt: '"+ _stringBuffer.ToString() + "'";
+    public void Render() => _consoleWriter.WriteText(_stringBuffer.ToString(), CurrentLineIndex);
+
+    public override string ToString() => _stringBuffer.ToString();
 }
