@@ -25,7 +25,7 @@ internal sealed class NetworkSystemWithGptComments : IChatMessageSubscriber
     //TODO implement lock on StringBuilder
     private readonly StringBuilder _memory = new();
 
-    // Listeners lifecycle looks owned here. Ensure StartAsync cancellation disposes/stops them in finally.
+    // Listeners lifecycle looks owned here. Ensure Start cancellation disposes/stops them in finally.
     private readonly List<Listener> _listeners;
 
     // Multiple registries track the same connection (list + dictionaries). This invites skew/races.
@@ -39,7 +39,7 @@ internal sealed class NetworkSystemWithGptComments : IChatMessageSubscriber
     // Stored but never awaited elsewhere. If not observed for coordination or shutdown, remove it.
     private readonly ConcurrentDictionary<Connection, Task> _receiveLoops = new();
 
-    // Accept loops are awaited in StartAsync; this is fine. Be mindful of listener disposal on exit.
+    // Accept loops are awaited in Start; this is fine. Be mindful of listener disposal on exit.
     private readonly List<Task> _acceptLoops = new();
 
     // Consider injecting IConsoleWriter for testability; default to singleton to keep simplicity.
@@ -73,7 +73,7 @@ internal sealed class NetworkSystemWithGptComments : IChatMessageSubscriber
 
     public async Task StartAsync(CancellationToken token)
     {
-        //TODO try/finally to stop/Dispose listeners when StartAsync completes/cancels.
+        //TODO try/finally to stop/Dispose listeners when Start completes/cancels.
         var ls = _listeners;
         for (var i = 0; i < ls.Count; i++)
         {
@@ -275,5 +275,5 @@ internal sealed class NetworkSystemWithGptComments : IChatMessageSubscriber
 // races may be acceptable for logs; but correctness of _memory should then not be relied on functionally.
 // If external code awaits _receiveLoops elsewhere (not in this file), keeping the dictionary is justified;
 // otherwise, it's confusing state and should be dropped or awaited on shutdown for graceful completion.
-// If listeners are managed elsewhere, listener disposal in StartAsync may be outside this class’s remit.
+// If listeners are managed elsewhere, listener disposal in Start may be outside this class’s remit.
 // If backpressure needs stronger guarantees, consider bounded channels per connection to avoid unbounded growth.

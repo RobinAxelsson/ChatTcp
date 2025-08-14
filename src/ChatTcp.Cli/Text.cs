@@ -9,7 +9,7 @@ public static class Text
         //networkManager.OnPacketReceivedFromServer = consoleChat.ReceiveServerPacket;
         //consoleChat.SendChatMessage = networkManager.SendChatMessageToServer;
 
-        //var serverTask = networkManager.StartAsync(cts, port: port);
+        //var serverTask = networkManager.Start(cts, port: port);
         //var consoleTask = consoleChat.Start(cts.Token);
 
         //try
