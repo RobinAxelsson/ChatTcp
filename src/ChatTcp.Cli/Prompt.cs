@@ -4,7 +4,6 @@ namespace ChatTcp.Cli.Shell;
 
 internal class Prompt
 {
-    private const string PROMPT_PREFIX = "Chat>";
     private readonly ConsoleWriter _consoleWriter;
     private readonly StringBuilder _stringBuffer = new();
     private int _currentLineIndex;
@@ -12,18 +11,23 @@ internal class Prompt
     public Prompt(ConsoleWriter consoleWriter)
     {
         _consoleWriter = consoleWriter;
-        _stringBuffer.Append(PROMPT_PREFIX);
+        _stringBuffer.Append(Styles.PROMPT_PREFIX);
     }
 
     public int LineCount
     {
         get
         {
-            int n = 1;
+            int lineCount = 1;
             foreach (var chunk in _stringBuffer.GetChunks())
+            {
                 foreach (var c in chunk.Span)
-                    if (c == '\n') n++;
-            return n;
+                {
+                    if (c == '\n') lineCount++;
+                }
+            }
+
+            return lineCount;
         }
     }
 
@@ -33,15 +37,20 @@ internal class Prompt
         set => _currentLineIndex = value;
     }
 
-    public string Text =>
-        _stringBuffer.Length > PROMPT_PREFIX.Length
-            ? _stringBuffer.ToString(PROMPT_PREFIX.Length, _stringBuffer.Length - PROMPT_PREFIX.Length)
-            : string.Empty;
+    public string Text
+    {
+        get
+        {
+            int length = _stringBuffer.Length;
+            int promptLength = Styles.PROMPT_PREFIX.Length;
+            int textLength = length - promptLength;
+            return _stringBuffer.ToString(promptLength, textLength);
+        }
+    }
 
-    public void Jump(int steps)
+    public void Jump(int newIndex)
     {
         _consoleWriter.ClearLines(CurrentLineIndex, LineCount);
-        var newIndex = CurrentLineIndex + steps;
         _consoleWriter.WriteText(_stringBuffer.ToString(), newIndex);
         CurrentLineIndex = newIndex;
     }
@@ -50,13 +59,15 @@ internal class Prompt
 
     public void Backspace()
     {
-        if (_stringBuffer.Length > PROMPT_PREFIX.Length)
+        if (_stringBuffer.Length > Styles.PROMPT_PREFIX.Length)
+        {
             _stringBuffer.Length -= 1;
+        }
     }
 
-    public void Clear()
+    public void ClearInput()
     {
-        _stringBuffer.Length = PROMPT_PREFIX.Length;
+        _stringBuffer.Length = Styles.PROMPT_PREFIX.Length;
     }
 
     public void Hide() => _consoleWriter.ClearLines(CurrentLineIndex, LineCount);

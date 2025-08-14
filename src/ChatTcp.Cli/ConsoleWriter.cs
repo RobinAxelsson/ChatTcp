@@ -30,22 +30,38 @@ internal class ConsoleWriter
         }
     }
 
-    public void WriteText(string text, int lineNumberStartAt0)
+    internal void Write(string text)
     {
         LockConsole(() =>
         {
-            _consoleAdapter.SetCursorPosition(0, lineNumberStartAt0);
+            Console.Write(text);
+        });
+    }
+
+    internal void Write(char ch)
+    {
+        LockConsole(() =>
+        {
+            Console.Write(ch);
+        });
+    }
+
+    public void WriteText(string text, int lineIndexStart)
+    {
+        LockConsole(() =>
+        {
+            _consoleAdapter.SetCursorPosition(0, lineIndexStart);
             _sb.Clear();
 
             int lineLength = 0;
             char last = default;
             int lineIndex = 0;
 
-            foreach (var c in text)
+            foreach (var ch in text)
             {
                 lineLength++;
 
-                if (c == '\n')
+                if (ch == '\n')
                 {
                     lineLength = 0;
                     if (_consoleLineMemory.TryGetLineLength(lineIndex, out int oldLineLength) && oldLineLength > lineLength)
@@ -57,7 +73,7 @@ internal class ConsoleWriter
                     lineIndex++;
                 }
 
-                _sb.Append(c);
+                _sb.Append(ch);
             }
 
             if (last != '\n')
@@ -68,7 +84,7 @@ internal class ConsoleWriter
             }
 
             Console.Write(_sb.ToString());
-            _consoleLineMemory.UpdateLineLengths(lineNumberStartAt0, text);
+            _consoleLineMemory.UpdateLineLengths(lineIndexStart, text);
         });
     }
 
