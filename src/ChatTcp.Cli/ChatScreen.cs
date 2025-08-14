@@ -3,7 +3,7 @@ using ChatTcp.Cli;
 using ChatTcp.Cli.Shell;
 using ChatTcp.Kernel;
 
-internal class Chat
+internal class ChatScreen
 {
     private readonly ConsoleWriter _consoleWriter;
     private readonly Prompt _prompt;
@@ -30,13 +30,13 @@ internal class Chat
         }
     }
 
-    public Chat(Action<Task<ChatMessageDto>> sendChatMessage)
+    public ChatScreen(Action<Task<ChatMessageDto>> sendChatMessage)
     {
         _consoleWriter = ConsoleWriter.Instance;
         _prompt = new Prompt(_consoleWriter);
     }
 
-    public Chat(ConsoleWriter consoleWriter, Prompt prompt, Action<ChatMessageDto> _sendChatMessage)
+    public ChatScreen(ConsoleWriter consoleWriter, Prompt prompt, Action<ChatMessageDto> _sendChatMessage)
     {
         _consoleWriter = consoleWriter;
         _prompt = prompt;

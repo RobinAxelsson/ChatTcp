@@ -18,6 +18,8 @@ internal static class Program
             new(IPAddress.Loopback, 8889)
         });
 
+        var entityStore = new EntityStore();
+
 
         while (!cts.IsCancellationRequested)
         {
