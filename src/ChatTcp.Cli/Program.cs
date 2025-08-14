@@ -6,8 +6,6 @@ namespace ChatTcp.Cli;
 internal static class Program
 {
 
-    public static Dictionary<ConsoleKey, TextLayer> KeyTextLayerDict = new();
-
     public static async Task Main(string[] args)
     {
         Console.WriteLine("Started");
