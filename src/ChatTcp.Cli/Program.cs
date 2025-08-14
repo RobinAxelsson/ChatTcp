@@ -1,6 +1,5 @@
 ﻿
 using System.Net;
-using ChatTcp.Kernel.Resources;
 
 namespace ChatTcp.Cli;
 internal static class Program
@@ -12,13 +11,14 @@ internal static class Program
 
         var cts = new CancellationTokenSource();
 
-        var networkSystem = new NetworkSystem(new List<Listener>
+        var networkSystem = new NetworkSystemWithGptComments(new List<Listener>
         {
             new(IPAddress.Loopback, 8888),
             new(IPAddress.Loopback, 8889)
         });
 
         var entityStore = new EntityStore();
+        entityStore.RegisterActor(networkSystem);
 
 
         while (!cts.IsCancellationRequested)

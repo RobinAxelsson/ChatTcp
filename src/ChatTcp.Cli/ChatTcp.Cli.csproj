@@ -15,8 +15,4 @@
     <InternalsVisibleTo Include="ChatTcp.Cli.Test" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\..\ChatTcp.Kernel\ChatTcp.Kernel.csproj" />
-  </ItemGroup>
-
 </Project>

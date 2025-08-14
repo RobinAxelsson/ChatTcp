@@ -1,4 +1,4 @@
-﻿using ChatTcp.Kernel;
+﻿namespace ChatTcp.Cli;
 
 internal class Styles
 {

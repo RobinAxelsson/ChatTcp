@@ -5,9 +5,9 @@ namespace ChatTcp.Kernel;
 
 public static class ChatTcpManager
 {
-    public static List<Listener> Listeners = new();
+    public static List<KernelListener> Listeners = new();
     public static List<TcpClientTask> AcceptTcpClientTasks = new();
-    public static List<Connection> Connections = new();
+    public static List<KernelConnection> Connections = new();
     public static List<SendMessageTask> SendMessageTasks = new();
     public static List<ReceiveMessageTask> ReceiveMessageTasks = new();
 
@@ -15,7 +15,7 @@ public static class ChatTcpManager
     {
         var cts = new CancellationTokenSource(); //world singleton
 
-        var listeners = new List<Listener>
+        var listeners = new List<KernelListener>
         {
             new(IPAddress.Loopback, 8888),
             new(IPAddress.Loopback, 8889)
@@ -56,7 +56,7 @@ public static class ChatTcpManager
 
                 if (acceptTcpClientTask.Task.IsCompletedSuccessfully)
                 {
-                    var connection = new Connection(acceptTcpClientTask.Task.Result);
+                    var connection = new KernelConnection(acceptTcpClientTask.Task.Result);
                     Connections.Add(connection);
                     Console.WriteLine($"{connection} created");
                     AcceptTcpClientTasks.RemoveAt(i);

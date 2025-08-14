@@ -1,6 +1,6 @@
 ﻿using System.Text;
 
-namespace ChatTcp.Cli.Shell;
+namespace ChatTcp.Cli;
 
 internal class Prompt
 {

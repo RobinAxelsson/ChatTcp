@@ -1,7 +1,5 @@
 ﻿using System.Text;
 using ChatTcp.Cli;
-using ChatTcp.Cli.Shell;
-using ChatTcp.Kernel;
 
 internal class ChatScreen
 {

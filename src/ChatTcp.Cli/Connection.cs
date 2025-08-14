@@ -1,6 +1,6 @@
 ﻿using System.Net.Sockets;
 
-namespace ChatTcp.Kernel.Resources;
+namespace ChatTcp.Cli;
 
 public class Connection : IDisposable
 {

@@ -70,10 +70,9 @@ internal sealed record UserEntity : EntityBase
     }
 }
 
-internal interface IChatMessageActor
+internal interface IChatMessageSubscriber
 {
     void OnChatMessageCreated(ChatMessageEntity message);
-    void CreateChatMessage(MessageDto message);
 }
 
 internal record MessageDto(string UserId, string ChatId, string Message);
@@ -141,7 +140,7 @@ internal class OrderedConcurrentDictionary<T> where T : EntityBase
 
 internal class EntityStore
 {
-    private readonly ConcurrentBag<IChatMessageActor> _chatMessageActors;
+    private readonly ConcurrentBag<IChatMessageSubscriber> _chatMessageActors;
     private readonly OrderedConcurrentDictionary<UserEntity> _users;
     private readonly OrderedConcurrentDictionary<ChatEntity> _chats;
     private readonly OrderedConcurrentDictionary<ChatMessageEntity> _chatMessages;
@@ -157,10 +156,10 @@ internal class EntityStore
         _users = new OrderedConcurrentDictionary<UserEntity>();
         _chats = new OrderedConcurrentDictionary<ChatEntity>();
         _chatMessages = new OrderedConcurrentDictionary<ChatMessageEntity>();
-        _chatMessageActors = new ConcurrentBag<IChatMessageActor>();
+        _chatMessageActors = new ConcurrentBag<IChatMessageSubscriber>();
     }
 
-    internal void RegisterActor(IChatMessageActor actor)
+    internal void RegisterActor(IChatMessageSubscriber actor)
     {
         if (actor is null) throw new InvalidStateException("Actor cannot be null.");
         _chatMessageActors.Add(actor);

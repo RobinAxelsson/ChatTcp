@@ -2,14 +2,15 @@
 using System.Net.Sockets;
 
 namespace ChatTcp.Kernel.Resources;
-public class Listener : IDisposable
+
+public class KernelListener : IDisposable
 {
     public TcpListener Socket { get; }
     public IPAddress Address { get; }
     public int Port { get; }
     public int ReceiversMax { get; } = 3;
     public ListenerState State { get; private set; } = ListenerState.Created;
-    public Listener(IPAddress address, int port)
+    public KernelListener(IPAddress address, int port)
     {
         Address = address;
         Port = port;
