@@ -18,8 +18,6 @@ internal static class Program
         });
 
         var entityStore = new EntityStore();
-        entityStore.RegisterActor(networkSystem);
-
 
         while (!cts.IsCancellationRequested)
         {

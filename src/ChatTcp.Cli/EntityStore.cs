@@ -19,6 +19,26 @@ using System.Collections.Concurrent;
 
 namespace ChatTcp.Cli;
 
+internal class EntityStore
+{
+    public OrderedConcurrentDictionary<UserEntity> Users { get; }
+    public OrderedConcurrentDictionary<ChatEntity> Chats { get; }
+    public OrderedConcurrentDictionary<ChatMessageEntity> ChatMessages { get; }
+
+    public EntityStore()
+    {
+        Users = new OrderedConcurrentDictionary<UserEntity>();
+        Chats = new OrderedConcurrentDictionary<ChatEntity>();
+        ChatMessages = new OrderedConcurrentDictionary<ChatMessageEntity>();
+    }
+}
+
+internal static class EntityManager
+{
+    //TODO create entities
+}
+
+
 internal static class IdHelper
 {
     internal static string Create()
@@ -135,188 +155,5 @@ internal class OrderedConcurrentDictionary<T> where T : EntityBase
     internal void Clear()
     {
         _byId.Clear();
-    }
-}
-
-internal class EntityStore
-{
-    private readonly ConcurrentBag<IChatMessageSubscriber> _chatMessageActors;
-    private readonly OrderedConcurrentDictionary<UserEntity> _users;
-    private readonly OrderedConcurrentDictionary<ChatEntity> _chats;
-    private readonly OrderedConcurrentDictionary<ChatMessageEntity> _chatMessages;
-
-    internal IReadOnlyList<UserEntity> Users => _users.ValuesOrdered;
-
-    internal IReadOnlyList<ChatEntity> Chats => _chats.ValuesOrdered;
-
-    internal IReadOnlyList<ChatMessageEntity> ChatMessages => _chatMessages.ValuesOrdered;
-
-    internal EntityStore()
-    {
-        _users = new OrderedConcurrentDictionary<UserEntity>();
-        _chats = new OrderedConcurrentDictionary<ChatEntity>();
-        _chatMessages = new OrderedConcurrentDictionary<ChatMessageEntity>();
-        _chatMessageActors = new ConcurrentBag<IChatMessageSubscriber>();
-    }
-
-    internal void RegisterActor(IChatMessageSubscriber actor)
-    {
-        if (actor is null) throw new InvalidStateException("Actor cannot be null.");
-        _chatMessageActors.Add(actor);
-    }
-
-    internal ChatMessageEntity CreateMessage(MessageDto dto)
-    {
-        if (dto is null) throw new InvalidStateException("Message dto is null.");
-        if (string.IsNullOrWhiteSpace(dto.UserId)) throw new InvalidStateException("UserId is required.");
-        if (string.IsNullOrWhiteSpace(dto.ChatId)) throw new InvalidStateException("ChatId is required.");
-        if (string.IsNullOrWhiteSpace(dto.Message)) throw new InvalidStateException("Message is required.");
-        if (!_users.ContainsId(dto.UserId)) throw new InvalidStateException($"User '{dto.UserId}' does not exist.");
-        if (!_chats.ContainsId(dto.ChatId)) throw new InvalidStateException($"Chat '{dto.ChatId}' does not exist.");
-
-        var entity = new ChatMessageEntity(dto.UserId, dto.ChatId, dto.Message);
-        _chatMessages.Add(entity);
-
-        foreach (var actor in _chatMessageActors)
-        {
-            actor.OnChatMessageCreated(entity);
-        }
-
-        return entity;
-    }
-
-    internal IReadOnlyList<ChatMessageEntity> CreateMessages(List<MessageDto> messages)
-    {
-        if (messages is null) throw new InvalidStateException("Messages list is null.");
-        if (messages.Count == 0) return Array.Empty<ChatMessageEntity>();
-
-        foreach (var m in messages)
-        {
-            if (m is null) throw new InvalidStateException("Message dto is null.");
-            if (string.IsNullOrWhiteSpace(m.UserId)) throw new InvalidStateException("UserId is required.");
-            if (string.IsNullOrWhiteSpace(m.ChatId)) throw new InvalidStateException("ChatId is required.");
-            if (string.IsNullOrWhiteSpace(m.Message)) throw new InvalidStateException("Message is required.");
-            if (!_users.ContainsId(m.UserId)) throw new InvalidStateException($"User '{m.UserId}' does not exist.");
-            if (!_chats.ContainsId(m.ChatId)) throw new InvalidStateException($"Chat '{m.ChatId}' does not exist.");
-        }
-
-        var created = new List<ChatMessageEntity>(messages.Count);
-
-        foreach (var m in messages)
-        {
-            var entity = new ChatMessageEntity(m.UserId, m.ChatId, m.Message);
-            _chatMessages.Add(entity);
-            created.Add(entity);
-        }
-
-        foreach (var entity in created)
-        {
-            foreach (var actor in _chatMessageActors)
-            {
-                actor.OnChatMessageCreated(entity);
-            }
-        }
-
-        return created;
-    }
-
-    internal ChatEntity CreateChat()
-    {
-        var chat = new ChatEntity();
-        _chats.Add(chat);
-        return chat;
-    }
-
-    internal IReadOnlyList<ChatEntity> CreateChats(int count)
-    {
-        if (count <= 0) throw new InvalidStateException("Count must be positive.");
-
-        var list = new List<ChatEntity>(count);
-
-        for (var i = 0; i < count; i++)
-        {
-            var chat = new ChatEntity();
-            _chats.Add(chat);
-            list.Add(chat);
-        }
-
-        return list;
-    }
-
-    internal UserEntity CreateUser(string username, IEnumerable<string>? joinedChatIds = null)
-    {
-        if (string.IsNullOrWhiteSpace(username)) throw new InvalidStateException("Username is required.");
-
-        var ids = joinedChatIds is null ? Array.Empty<string>() : joinedChatIds;
-
-        foreach (var id in ids)
-        {
-            if (string.IsNullOrWhiteSpace(id)) throw new InvalidStateException("Joined chat id is invalid.");
-            if (!_chats.ContainsId(id)) throw new InvalidStateException($"Joined chat '{id}' does not exist.");
-        }
-
-        var user = new UserEntity(username, ids);
-        _users.Add(user);
-        return user;
-    }
-
-    internal IReadOnlyList<UserEntity> CreateUsers(List<(string Username, IEnumerable<string>? JoinedChatIds)> users)
-    {
-        if (users is null) throw new InvalidStateException("Users list is null.");
-        if (users.Count == 0) return Array.Empty<UserEntity>();
-
-        foreach (var (username, joinedChatIds) in users)
-        {
-            if (string.IsNullOrWhiteSpace(username)) throw new InvalidStateException("User must have a username.");
-
-            if (joinedChatIds is null)
-            {
-                continue;
-            }
-
-            foreach (var id in joinedChatIds)
-            {
-                if (string.IsNullOrWhiteSpace(id)) throw new InvalidStateException("Joined chat id is invalid.");
-                if (!_chats.ContainsId(id)) throw new InvalidStateException($"Joined chat '{id}' does not exist.");
-            }
-        }
-
-        var created = new List<UserEntity>(users.Count);
-
-        foreach (var (username, joinedChatIds) in users)
-        {
-            var u = new UserEntity(username, joinedChatIds);
-            _users.Add(u);
-            created.Add(u);
-        }
-
-        return created;
-    }
-
-    internal IReadOnlyList<string> GetChatMessageText(ChatEntity chat)
-    {
-        if (chat is null) throw new InvalidStateException("Chat is null.");
-        if (!_chats.ContainsId(chat.Id)) throw new InvalidStateException($"Chat '{chat.Id}' does not exist.");
-
-        var texts = _chatMessages
-            .ValuesOrdered
-            .Where(m => m.ChatId == chat.Id)
-            .Select(m => m.Message)
-            .ToList();
-
-        return texts;
-    }
-
-    internal IReadOnlyList<UserEntity> GetChatUsers(ChatEntity chat)
-    {
-        if (chat is null) throw new InvalidStateException("Chat is null.");
-        if (!_chats.ContainsId(chat.Id)) throw new InvalidStateException($"Chat '{chat.Id}' does not exist.");
-
-        var users = _users
-            .ValuesOrdered
-            .Where(u => u.JoinedChatIds.Contains(chat.Id))
-            .ToList();
-
-        return users;
     }
 }
