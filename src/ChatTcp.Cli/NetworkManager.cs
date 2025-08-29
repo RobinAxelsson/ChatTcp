@@ -17,6 +17,8 @@
 
 using System.Net;
 using System.Net.Sockets;
+using System.Runtime.CompilerServices;
+using System.Threading.Channels;
 
 namespace ChatTcp.Cli;
 
@@ -73,13 +75,13 @@ internal sealed class NetworkManager : IHaveOutbox
             var finishedTask = await Task.WhenAny(allTasks).ConfigureAwait(false);
             allTasks.Remove(finishedTask);
 
-            await HandleFinnishedTask(finishedTask, allTasks, ct);
+            await TaskDispatch(finishedTask, allTasks, ct);
         }
 
         await Task.WhenAll(allTasks).ConfigureAwait(false);
     }
 
-    private async Task HandleFinnishedTask(Task finishedTask, List<Task> allTasks, CancellationToken token)
+    private async Task TaskDispatch(Task finishedTask, List<Task> allTasks, CancellationToken token)
     {
         if (_taskEvents.TryGetValue(finishedTask, out var info))
         {
@@ -204,6 +206,105 @@ public class Listener : IDisposable
     public override string ToString()
     {
         return $"|{Address}:{Port}:{State}|";
+    }
+}
+
+internal sealed class ConnectionContext : IDisposable
+{
+    public Connection Conn { get; }
+    public string ConnectionId { get; }
+
+    private readonly Channel<WirePacketDto> _inbound =
+        Channel.CreateBounded<WirePacketDto>(new BoundedChannelOptions(1024) { SingleReader = false, SingleWriter = true });
+
+    private readonly Channel<WirePacketDto> _outbound =
+        Channel.CreateBounded<WirePacketDto>(new BoundedChannelOptions(1024) { SingleReader = true, SingleWriter = false });
+
+    private readonly CancellationTokenSource _cts = new();
+    private Task? _sendLoop;
+    private Task? _recvLoop;
+
+    internal ConnectionContext(Connection conn, string connectionId)
+    {
+        if (conn is null) { throw new InvalidStateException("Connection is null."); }
+        if (string.IsNullOrWhiteSpace(connectionId)) { throw new InvalidStateException("ConnectionId required."); }
+        Conn = conn;
+        ConnectionId = connectionId;
+    }
+
+    internal void Start()
+    {
+        if (_sendLoop is not null || _recvLoop is not null) { throw new InvalidStateException("Already started."); }
+        _sendLoop = RunSendAsync(_cts.Token);
+        _recvLoop = RunRecvAsync(_cts.Token);
+    }
+
+    internal ValueTask EnqueueAsync(WirePacketDto dto, CancellationToken ct = default)
+    {
+        if (dto is null) { throw new InvalidStateException("Packet is null."); }
+        return _outbound.Writer.WriteAsync(dto, ct);
+    }
+
+    // Async stream of inbound packets; one consumer at a time per caller.
+    internal async IAsyncEnumerable<WirePacketDto> ReadAllAsync([EnumeratorCancellation] CancellationToken ct = default)
+    {
+        while (await _inbound.Reader.WaitToReadAsync(ct).ConfigureAwait(false))
+        {
+            while (_inbound.Reader.TryRead(out var dto))
+            {
+                yield return dto;
+            }
+        }
+    }
+
+    private async Task RunSendAsync(CancellationToken ct)
+    {
+        try
+        {
+            while (await _outbound.Reader.WaitToReadAsync(ct).ConfigureAwait(false))
+            {
+                while (_outbound.Reader.TryRead(out var dto))
+                {
+                    await PacketStream.WritePacketAsync(dto, Conn.NetworkStream, ct).ConfigureAwait(false);
+                }
+            }
+        }
+        catch (OperationCanceledException) { }
+    }
+
+    private async Task RunRecvAsync(CancellationToken ct)
+    {
+        try
+        {
+            while (!ct.IsCancellationRequested)
+            {
+                var dto = await PacketStream.ReadPacketAsync(Conn.NetworkStream, ct).ConfigureAwait(false);
+                if (!_inbound.Writer.TryWrite(dto))
+                {
+                    await _inbound.Writer.WriteAsync(dto, ct).ConfigureAwait(false);
+                }
+            }
+        }
+        catch (OperationCanceledException) { }
+        finally
+        {
+            _inbound.Writer.TryComplete();
+        }
+    }
+
+    internal void Stop()
+    {
+        _cts.Cancel();
+        try { _outbound.Writer.TryComplete(); } catch { }
+    }
+
+    public void Dispose()
+    {
+        Stop();
+        try { _sendLoop?.Wait(); } catch { }
+        try { _recvLoop?.Wait(); } catch { }
+        Conn.Dispose();
+        _cts.Dispose();
     }
 }
 
