@@ -125,16 +125,6 @@ internal sealed class NetworkManager : IHaveOutbox
 }
 internal record NetworkManagerOptions(List<(IPAddress IPAddress, int Port)> Addresses);
 
-internal interface IHaveOutbox
-{
-    void AddToOutbox(WirePacketDto wirePacketDto);
-}
-
-internal interface IHaveInbox
-{
-    void AddToInbox(WirePacketDto wirePacketDto);
-}
-
 internal sealed class AcceptClientTaskContext : TaskContext
 {
     internal Listener Listener { get; }
@@ -208,17 +198,6 @@ public class Listener : IDisposable
     {
         return $"|{Address}:{Port}:{State}|";
     }
-}
-
-public enum ListenerState
-{
-    Created,       // Allocated but not started
-    Starting,      // Start() called but not yet accepting (optional transitional)
-    Listening,     // Accepting connections
-    Stopping,      // Stop requested but accepts still completing
-    Stopped,       // Fully stopped
-    Faulted,       // Hit an unrecoverable error
-    Disposed       // Freed resources
 }
 
 internal sealed class ConnectionContext : IDisposable
@@ -433,14 +412,6 @@ public class PacketStream
     }
 }
 
-internal enum PayloadType
-{
-    Unknown = 0,
-    ChatMessage = 1
-}
-
-
-
 internal sealed class MessageReceivedTaskContext : TaskContext
 {
     internal WirePacketDto Packet { get; }
@@ -450,10 +421,6 @@ internal sealed class MessageReceivedTaskContext : TaskContext
     }
 
     public WirePacketDto Result => Packet;
-}
-
-internal abstract class TaskContext
-{
 }
 
 public class ChatMessageDto : WirePacketDto
@@ -483,4 +450,35 @@ public class JoinChatDto : WirePacketDto
     public JoinChatDto(string alias) => Alias = alias;
 
     public string Alias { get; init; }
+}
+
+internal abstract class TaskContext
+{
+}
+
+internal interface IHaveOutbox
+{
+    void AddToOutbox(WirePacketDto wirePacketDto);
+}
+
+internal interface IHaveInbox
+{
+    void AddToInbox(WirePacketDto wirePacketDto);
+}
+
+public enum ListenerState
+{
+    Created,       // Allocated but not started
+    Starting,      // Start() called but not yet accepting (optional transitional)
+    Listening,     // Accepting connections
+    Stopping,      // Stop requested but accepts still completing
+    Stopped,       // Fully stopped
+    Faulted,       // Hit an unrecoverable error
+    Disposed       // Freed resources
+}
+
+internal enum PayloadType
+{
+    Unknown = 0,
+    ChatMessage = 1
 }
